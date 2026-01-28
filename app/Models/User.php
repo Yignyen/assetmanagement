@@ -21,6 +21,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
+        'department',
     ];
 
     /**
@@ -33,6 +35,9 @@ class User extends Authenticatable
         'remember_token',
     ];
 
+    
+
+
     /**
      * Get the attributes that should be cast.
      *
@@ -44,5 +49,12 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+
+
+
+    public function assignments(){
+    return $this->hasMany(Assignment::class);
     }
 }
