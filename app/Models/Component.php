@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Models;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 use Illuminate\Database\Eloquent\Model;
 
@@ -17,9 +18,20 @@ class Component extends Model
 {
     return $this->belongsTo(\App\Models\Category::class);
 }
-    public function assignments()
+  
+    public function assets()
+    {
+        return $this->belongsToMany(
+            Asset::class,
+            'componentS_assets'
+        )->withPivot(['assigned_qty','created_by'])->withTimestamps();
+    }
+
+
+    public function logs()
 {
-    return $this->morphMany(Assignment::class, 'item');
+    return $this->morphMany(ActionLog::class, 'item');
 }
 
 }
+

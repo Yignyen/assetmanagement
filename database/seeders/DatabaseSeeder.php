@@ -23,14 +23,18 @@ class DatabaseSeeder extends Seeder
         ]);
     } */
 
-    public function run()
+  public function run(): void
 {
     $this->call([
         UserSeeder::class,
         CategorySeeder::class,
         AssetSeeder::class,
-        AssignmentSeeder::class,
+        AccessorySeeder::class,
+        ComponentSeeder::class,
     ]);
 }
+
+
+
 
 }

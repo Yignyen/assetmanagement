@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+
 class Accessory extends Model
 {
     protected $fillable = [
@@ -11,16 +13,24 @@ class Accessory extends Model
         'total_qty',
         'available_qty',
         'category_id',
-        'total_qty',
+        
 
     ];
     public function category()
 {
     return $this->belongsTo(\App\Models\Category::class);
 }   
-    public function assignments()
+
+// Accessory checkout history
+
+public function checkouts()
 {
-    return $this->morphMany(Assignment::class, 'item');
+    return $this->hasMany(AccessoryCheckout::class);
+}
+
+public function logs()
+{
+    return $this->morphMany(ActionLog::class, 'item');
 }
 
 

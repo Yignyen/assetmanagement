@@ -21,7 +21,10 @@ return new class extends Migration
 
 
             $table->timestamps();
+
+        
         });
+    
     }
 
     /**
@@ -31,4 +34,7 @@ return new class extends Migration
     {
         Schema::dropIfExists('components');
     }
+
+
+    
 };

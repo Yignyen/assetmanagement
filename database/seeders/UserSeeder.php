@@ -16,16 +16,31 @@ class UserSeeder extends Seeder
     public function run(): void
     {   
 
+        // Admin user
         User::create([
-        'name' => 'Admin User',
-        'email' => 'admin@test.com',
-        'password' => Hash::make('password'),
-    ]);
+            'name' => 'Admin User',
+            'email' => 'admin@test.com',
+            'password' => Hash::make('password'),
+            'role' => 'admin',
+            'department' => 'TCRC',
+        ]);
 
-    User::create([
-        'name' => 'Staff User',
-        'email' => 'staff@test.com',
-        'password' => Hash::make('password'),
-    ]);
+        // Normal staff
+        User::create([
+            'name' => 'Staff User',
+            'email' => 'staff@test.com',
+            'password' => Hash::make('password'),
+            'role' => 'staff',
+            'department' => 'TCRC',
+             ]);
+        
+             // Another sample intern
+        User::create([
+            'name' => 'HR Manager',
+            'email' => 'hr@test.com',
+            'password' => Hash::make('password'),
+            'role' => 'intern',
+            'department' => 'TCRC',
+        ]);
     }
 }
