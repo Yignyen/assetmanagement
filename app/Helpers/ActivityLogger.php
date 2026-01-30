@@ -17,7 +17,7 @@ class ActivityLogger
             'item_type'   => get_class($item),
             'item_id'     => $item->id,
 
-            'target_type' => $target ? get_class($target) : null,
+            'target_type' => $target ? get_class($target) : null, 
             'target_id'   => $target?->id,
 
             'note'        => $note,
