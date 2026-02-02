@@ -18,7 +18,7 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
-        $user->delete();   // 👈 SOFT DELETE happens here
+        $user->delete();   //  SOFT DELETE happens here
 
         return back()->with('success', 'User deleted successfully');
     }

@@ -31,7 +31,7 @@ class Asset extends Model
 //polymorphic owner, directly assigned these two on assets .
     public function assigned()
 {
-    return $this->morphTo(null, 'assigned_type', 'assigned_to');
+    return $this->morphTo('assigned', 'assigned_type', 'assigned_to')/* ->withTrashed() */; //deleted users still resolve, action logs never go empty
 }
 
     /**

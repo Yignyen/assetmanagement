@@ -25,7 +25,7 @@ class ActionLog extends Model
     // Who performed the action
     public function actor()
     {
-        return $this->belongsTo(User::class, 'created_by');
+        return $this->belongsTo(User::class, 'created_by')->withTrashed();
     }
 
     // Polymorphic: the thing being acted on (Asset, Accessory, Component)
@@ -37,6 +37,6 @@ class ActionLog extends Model
     // Polymorphic: target (User, Asset, etc.)
     public function target()
     {
-        return $this->morphTo();
+        return $this->morphTo()->withTrashed();
     }
 }

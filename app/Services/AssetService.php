@@ -9,7 +9,7 @@ use Exception;
 
 class AssetService
 {
-    public static function checkout(Asset $asset, User $user, ?string $note = null): void
+    public static function checkout(Asset $asset, User $user, ?string $note = null): void    //static is easy to call anyhweere,  void  no need to return data,it jujst act
     {
 
     // NOTE: Status-based guard for now.
@@ -48,6 +48,9 @@ class AssetService
         throw new Exception('Asset is not currently assigned');
     }
 
+       // ✅ 1. Capture who it was assigned to BEFORE check-in
+    $previousTarget = $asset->assigned; // User / Location / Asset (withTrashed-safe)
+//then next method will unassigned.
     //let the mmodel handle unassignment
     $asset->checkIn();
 
@@ -63,7 +66,7 @@ class AssetService
     ActivityLogger::log(
         action: 'checkin',
         item: $asset,
-        target: null,
+        target: $previousTarget,
         note: $note,
         qty: 1
     );
