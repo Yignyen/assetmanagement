@@ -23,6 +23,7 @@ return new class extends Migration
             $table->string('department')->nullable();
 
             $table->rememberToken();
+            $table->softDeletes();
             $table->timestamps();
         });
 

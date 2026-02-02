@@ -52,14 +52,22 @@
                 <td>{{ $asset->asset_tag }}</td>
                 <td>{{ $asset->category->name ?? '—' }}</td>
 
-                <td class="status-{{ $asset->status }}">
-                    {{ ucfirst($asset->status) }} {{-- makes it captial furst letter --}}
+                 <td class="status-{{ $asset->status }}">
+                    {{ ucfirst($asset->status) }} {{-- //makes it captial furst letter  --}}
                 </td>
+ 
+              {{--   <td class="status-{{ $asset->assigned ? $asset->status : 'available' }}">  If $asset->assigned exists → use $asset->status Otherwise → use 'available'”--}}
 
-                <td>
-                    @if($asset->assigned)
+                   {{--  {{ $asset->assigned ? ucfirst($asset->status) : 'Available' }}{{-- $asset->assigned → relationship,Returns:User object → TRUE,null → FALSE --}}
+                {{-- </td>  If this asset has a real assigned user → show real status
+Otherwise → force status to Available” --}} 
+
+
+                <td> {{-- assigned relation method name --}}
+                    @if($asset->assigned)    {{-- eloguent relationship, in asset model, function assigned()-> returns a user object or null --}}
                         {{ $asset->assigned->name }}
-                       
+                       {{-- Finds a method called assigned(),Executes the relationship query Returns: a User model ✅ or null --}}
+
                     @else
                         —
                     @endif

@@ -6,11 +6,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Asset;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable,SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -57,4 +59,19 @@ class User extends Authenticatable
     public function assignments(){
     return $this->hasMany(Assignment::class);
     }
+
+
+
+/* Laravel automatically calls this when the model is loaded */
+    protected static function booted()
+{
+        static::deleting(function ($user) { /* Before deleting any uuser, this runs */
+            Asset::where('assigned_to', $user->id)//checks asset tables and all asset links to this useers.will be update to status vaailable.
+                ->update([
+                    'assigned_to' => null,
+                    'status' => 'available',
+            ]);
+    });
+}
+
 }

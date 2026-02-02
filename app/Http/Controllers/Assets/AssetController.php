@@ -1,9 +1,12 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Assets;
 use App\Models\Asset;
 use App\Models\User;
 use App\Services\AssetService;
+use App\Http\Controllers\Controller;
+
+
 
 use Illuminate\Http\Request;
 

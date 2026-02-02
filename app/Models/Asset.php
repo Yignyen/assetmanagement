@@ -4,6 +4,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 use Illuminate\Database\Eloquent\Model;
+use Exception;
 
 class Asset extends Model
 {
@@ -63,5 +64,39 @@ class Asset extends Model
     return $this->morphMany(ActionLog::class, 'item');
 }
 
+    /**
+     * CHECK IN the asset (make it available)
+     * This is the ONLY place that should unassign an asset
+     */
+    public function checkIn(): void
+    {
+        $this->assigned_to   = null;
+        $this->assigned_type = null;
+        $this->status        = 'available';
+
+        $this->save();
+    }
+
+/**
+ * CHECK OUT the asset to a user
+ * This is the ONLY place that should assign an asset
+ */
+public function checkOutTo(User $user): void
+{
+    // 1. Guard: asset must be unassigned
+    if ($this->assigned_to !== null) {
+        throw new Exception('Asset is already assigned');
+    }
+
+    // 2. Assign asset to the user (polymorphic)
+    $this->assigned_to   = $user->id;
+    $this->assigned_type = User::class;
+
+    // 3. Update status (display state)
+    $this->status = 'assigned';
+
+    // 4. Persist changes
+    $this->save();
+}
     
 }
