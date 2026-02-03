@@ -8,7 +8,7 @@ use App\Models\ActionLog;
 
 class ActivityLogger
 {
-    public static function log($action, $item, $target = null, $note = null, $qty = 1)
+    public static function log($action, $item, $target = null, $note, $qty = 1)
     {
         return ActionLog::create([
             'created_by'  => Auth::id() ?? 1, // clean + IDE safe

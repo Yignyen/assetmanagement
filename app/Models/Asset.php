@@ -1,13 +1,16 @@
 <?php
 
 namespace App\Models;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Helpers\ActivityLogger;
 use Exception;
 
 class Asset extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'name',
         'serial_no',
@@ -15,41 +18,33 @@ class Asset extends Model
         'status',
         'category_id',
         'purchase_date',
+        'location_id',
         'assigned_type',
         'assigned_to',
-        'status'
     ];
+
+    /* =======================
+     * RELATIONSHIPS
+     * ======================= */
 
     public function category()
     {
         return $this->belongsTo(Category::class);
     }
 
-  
-   
+    // Physical location (department OR room)
+    public function location()
+    {
+        return $this->belongsTo(Location::class, 'location_id');
+    }
 
-//polymorphic owner, directly assigned these two on assets .
+    // Polymorphic assignment target (history-safe)
     public function assigned()
-{
-    return $this->morphTo('assigned', 'assigned_type', 'assigned_to')/* ->withTrashed() */; //deleted users still resolve, action logs never go empty
-}
+    {
+        return $this->morphTo('assigned', 'assigned_type', 'assigned_to')
+                    ->withTrashed();
+    }
 
-    /**
-     * An asset can have many components attached to it.
-     * Example:
-     *  - Laptop asset has RAM, SSD, Battery as components.
-     *  - One asset can use multiple quantities of the same component.
-     *
-     * This is a Many-to-Many relationship using the pivot table: components_assets
-     *
-     * Pivot table columns:
-     *  - asset_id        → which asset
-     *  - component_id    → which component
-     *  - assigned_qty    → how many units are used in this asset
-     *  - note            → optional comment about assignment
-     *  - created_by      → admin/user who made the assignment
-     *  - created_at / updated_at → timestamps of assignment
-     */
     public function components()
     {
         return $this->belongsToMany(
@@ -60,43 +55,123 @@ class Asset extends Model
     }
 
     public function logs()
-{
-    return $this->morphMany(ActionLog::class, 'item');
-}
+    {
+        return $this->morphMany(ActionLog::class, 'item');
+    }
+
+    /* =======================
+     * HELPERS
+     * ======================= */
+
+    protected function guardAvailable(): void
+    {
+        if ($this->assigned_to !== null) {
+            throw new Exception('Asset is already assigned');
+        }
+    }
+
+    /* =======================
+     * BUSINESS LOGIC
+     * ======================= */
 
     /**
-     * CHECK IN the asset (make it available)
-     * This is the ONLY place that should unassign an asset
+     * CHECK IN (return to department pool)
      */
-    public function checkIn(): void
+    public function checkIn(int $departmentId, ?string $note = null): void
     {
+        if ($this->assigned_to === null) {
+            throw new Exception('Asset is not currently assigned');
+        }
+
+        // capture previous target for log
+        $previousTarget = $this->assigned;
+
         $this->assigned_to   = null;
         $this->assigned_type = null;
         $this->status        = 'available';
+        $this->location_id   = $departmentId;
 
         $this->save();
+
+        ActivityLogger::log(
+            action: 'checkin',
+            item: $this,
+            target: $previousTarget,
+            note: $note,
+            qty: 1
+        );
     }
 
-/**
- * CHECK OUT the asset to a user
- * This is the ONLY place that should assign an asset
- */
-public function checkOutTo(User $user): void
-{
-    // 1. Guard: asset must be unassigned
-    if ($this->assigned_to !== null) {
-        throw new Exception('Asset is already assigned');
+    /**
+     * CHECK OUT to USER
+     */
+    public function checkOutToUser(User $user, ?string $note = null): void
+    {
+        $this->guardAvailable();
+
+        $this->assigned_to   = $user->id;
+        $this->assigned_type = User::class;
+        $this->location_id   = $user->location_id;
+        $this->status        = 'assigned';
+
+        $this->save();
+
+        ActivityLogger::log(
+            action: 'checkout',
+            item: $this,
+            target: $user,
+            note: $note,
+            qty: 1
+        );
     }
 
-    // 2. Assign asset to the user (polymorphic)
-    $this->assigned_to   = $user->id;
-    $this->assigned_type = User::class;
+    /**
+     * CHECK OUT to LOCATION (room)
+     */
+    public function checkOutToLocation(Location $room, ?string $note = null): void
+    {
+        $this->guardAvailable();
 
-    // 3. Update status (display state)
-    $this->status = 'assigned';
+        if ($room->parent_id === null) {
+            throw new Exception('Assets can only be assigned to rooms');
+        }
 
-    // 4. Persist changes
-    $this->save();
-}
-    
+        $this->assigned_to   = $room->id;
+        $this->assigned_type = Location::class;
+        $this->location_id   = $room->id;
+        $this->status        = 'assigned';
+
+        $this->save();
+
+        ActivityLogger::log(
+            action: 'checkout',
+            item: $this,
+            target: $room,
+            note: $note,
+            qty: 1
+        );
+    }
+
+    /**
+     * CHECK OUT to ANOTHER ASSET
+     */
+    public function checkOutToAsset(Asset $parentAsset, ?string $note = null): void
+    {
+        $this->guardAvailable();
+
+        $this->assigned_to   = $parentAsset->id;
+        $this->assigned_type = Asset::class;
+        $this->location_id   = $parentAsset->location_id;
+        $this->status        = 'assigned';
+
+        $this->save();
+
+        ActivityLogger::log(
+            action: 'checkout',
+            item: $this,
+            target: $parentAsset,
+            note: $note,
+            qty: 1
+        );
+    }
 }

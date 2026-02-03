@@ -15,19 +15,19 @@ Route::get('/', function () {
 
 
 
+Route::get('/assets', [AssetController::class, 'index'])
+    ->name('assets.index');
+
 Route::get('/assets/{asset}', [AssetController::class, 'show'])
     ->name('assets.show');
 
-Route::post('/assets/{asset}/assign', [AssetController::class, 'checkout'])
-    ->name('assets.assign');
+/* CHECKOUT */
+Route::post('/assets/{asset}/checkout', [AssetController::class, 'checkout'])
+    ->name('assets.checkout');
 
-Route::post('/assets/{asset}/unassign', [AssetController::class, 'checkin'])
-    ->name('assets.unassign');
-
-
-
-Route::get('/assets', [AssetController::class, 'index'])
-    ->name('assets.index');
+/* CHECKIN */
+Route::post('/assets/{asset}/checkin', [AssetController::class, 'checkin'])
+    ->name('assets.checkin');
 
 
 
@@ -40,12 +40,23 @@ Route::get('/action_logs', [ActionLogController::class, 'index'])
 /* 
 for delete user */
 
-Route::delete('/users/{user}', [UserController::class, 'destroy'])
+/* Route::delete('/users/{user}', [UserController::class, 'destroy'])
      ->name('users.destroy');
 
      //for index
 
 Route::get('/users', [UserController::class, 'index'])
     ->name('users.index');
+ */
+
+
+Route::resource('users', UserController::class);
+
+
+
+
+use App\Http\Controllers\Locations\LocationController;
+
+Route::resource('locations', LocationController::class);
 
 

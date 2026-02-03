@@ -26,6 +26,12 @@
     </style>
 </head>
 <body>
+    <a href="{{ route('assets.index') }}" class="btn btn-warning">
+    ← Back to Assets
+</a>
+<br>
+<br>
+
 
     <h2>Action Logs</h2>
 

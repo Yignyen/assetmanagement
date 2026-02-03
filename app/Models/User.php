@@ -8,6 +8,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\Asset;
+use App\Models\Location;
 
 class User extends Authenticatable
 {
@@ -24,7 +25,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
-        'department',
+        'location_id',
     ];
 
     /**
@@ -72,6 +73,11 @@ class User extends Authenticatable
                     'status' => 'available',
             ]);
     });
+}
+
+public function location()
+{
+    return $this->belongsTo(Location::class,'location_id');
 }
 
 }
