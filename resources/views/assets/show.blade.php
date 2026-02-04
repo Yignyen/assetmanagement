@@ -13,9 +13,11 @@
 
 <p><strong>ID:</strong> {{ $asset->id }}</p>
 <p><strong>Name:</strong> {{ $asset->name }}</p>
-<p><strong>Status:</strong>
-    <span class="status-{{ $asset->status }}">
-        {{ ucfirst($asset->status) }}
+
+<p>
+    <strong>Status:</strong>
+    <span class="status-{{ $asset->assigned_to ? 'assigned' : 'available' }}">
+        {{ $asset->assigned_to ? 'Assigned' : 'Available' }}
     </span>
 </p>
 
@@ -29,12 +31,10 @@
 
 <hr>
 
-
-
 {{-- =====================
    CHECKOUT FORM
 ===================== --}}
-@if($asset->status === 'available')
+@if($asset->assigned_to === null)
     <h3>Assign Asset</h3>
 
     <form method="POST" action="{{ route('assets.checkout', $asset) }}">
@@ -56,9 +56,7 @@
             <label>User:</label><br>
             <select name="checkout_to_id" disabled>
                 @foreach($users as $user)
-                    <option value="{{ $user->id }}">
-                        {{ $user->name }}
-                    </option>
+                    <option value="{{ $user->id }}">{{ $user->name }}</option>
                 @endforeach
             </select>
         </div>
@@ -68,21 +66,17 @@
             <label>Parent Asset:</label><br>
             <select name="checkout_to_id" disabled>
                 @foreach($assets as $parent)
-                    <option value="{{ $parent->id }}">
-                        {{ $parent->name }}
-                    </option>
+                    <option value="{{ $parent->id }}">{{ $parent->name }}</option>
                 @endforeach
             </select>
         </div>
 
-        {{-- LOCATION (ROOMS ONLY) — NOW LAST --}}
+        {{-- LOCATION --}}
         <div id="location-select" style="display:none;">
             <label>Room:</label><br>
             <select name="checkout_to_id" disabled>
                 @foreach($locations as $location)
-                    <option value="{{ $location->id }}">
-                        {{ $location->name }}
-                    </option>
+                    <option value="{{ $location->id }}">{{ $location->name }}</option>
                 @endforeach
             </select>
         </div>
@@ -101,27 +95,24 @@
 {{-- =====================
    CHECKIN FORM
 ===================== --}}
-@if($asset->status === 'assigned')
+@if($asset->assigned_to !== null)
     <h3>Unassign Asset</h3>
 
     <p>
         <strong>Assigned To:</strong>
-        {{ $asset->assigned->name ?? 'N/A' }}
+        @if($asset->assigned)
+            {{ class_basename($asset->assigned_type) }}
+            #{{ $asset->assigned->id }}
+            @if(property_exists($asset->assigned, 'name') && $asset->assigned->name)
+                ({{ $asset->assigned->name }})
+            @endif
+        @else
+            —
+        @endif
     </p>
 
     <form method="POST" action="{{ route('assets.checkin', $asset) }}">
         @csrf
-
-        <label>Return to Department:</label><br>
-        <select name="department_id" required>
-            @foreach($departments as $department)
-                <option value="{{ $department->id }}">
-                    {{ $department->name }}
-                </option>
-            @endforeach
-        </select>
-
-        <br><br>
 
         <label>Note (optional):</label><br>
         <input type="text" name="note">
@@ -132,17 +123,16 @@
     </form>
 @endif
 
+{{-- =====================
+   TOGGLE SCRIPT
+===================== --}}
 <script>
 function toggleTarget(type) {
-    // Disable ALL checkout_to_id selects
-    document
-        .querySelectorAll('[name="checkout_to_id"]')
-        .forEach(el => {
-            el.disabled = true;
-            el.closest('div').style.display = 'none';
-        });
+    document.querySelectorAll('[name="checkout_to_id"]').forEach(el => {
+        el.disabled = true;
+        el.closest('div').style.display = 'none';
+    });
 
-    // Enable ONLY the selected one
     if (type === 'user') {
         const el = document.querySelector('#user-select select');
         el.disabled = false;
@@ -162,6 +152,5 @@ function toggleTarget(type) {
     }
 }
 </script>
-
 
 @endsection

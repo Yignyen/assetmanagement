@@ -19,10 +19,12 @@
         th {
             background-color: #f5f5f5;
         }
-        .action-create { color: green; font-weight: bold; }
-        .action-assign { color: blue; font-weight: bold; }
-        .action-update { color: orange; font-weight: bold; }
-        .action-delete { color: red; font-weight: bold; }
+        .action-create   { color: green; font-weight: bold; }
+        .action-checkout { color: blue; font-weight: bold; }
+        .action-checkin  { color: purple; font-weight: bold; }
+        .action-update   { color: orange; font-weight: bold; }
+        .action-delete   { color: red; font-weight: bold; }
+
     </style>
 </head>
 <body>

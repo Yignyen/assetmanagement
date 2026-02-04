@@ -11,34 +11,46 @@
 
 <br><br>
 
-@foreach($departments as $department)
-    <div style="margin-bottom:20px;">
-        <strong>{{ $department->name }}</strong>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Department</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
 
-        <div style="margin-left:20px; margin-top:8px;">
-            @forelse($department->children as $place)
-                <div style="margin-bottom:6px;">
-                    • {{ $place->name }}
+    <tbody>
+        @forelse($locations as $location)
+        <tr>
+            <td>{{ $location->name }}</td>
+            <td>{{ $location->department->name ?? '—' }}</td>
+            <td>
+                <a href="{{ route('locations.edit', $location) }}" class="btn btn-warning">
+                    Edit
+                </a>
 
-                    <a href="{{ route('locations.edit', $place) }}"
-                       class="btn btn-warning">Edit</a>
+                <form action="{{ route('locations.destroy', $location) }}"
+                      method="POST"
+                      style="display:inline;">
+                    @csrf
+                    @method('DELETE')
 
-                    <form action="{{ route('locations.destroy', $place) }}"
-                          method="POST"
-                          style="display:inline;">
-                        @csrf
-                        @method('DELETE')
-                        <button class="btn btn-danger"
-                                onclick="return confirm('Delete this location?')">
-                            Delete
-                        </button>
-                    </form>
-                </div>
-            @empty
-                <em style="color:#6b7280;">No places</em>
-            @endforelse
-        </div>
-    </div>
-@endforeach
+                    <button class="btn btn-danger"
+                            onclick="return confirm('Delete this location?')">
+                        Delete
+                    </button>
+                </form>
+            </td>
+        </tr>
+        @empty
+        <tr>
+            <td colspan="3" style="text-align:center;">
+                No locations found.
+            </td>
+        </tr>
+        @endforelse
+    </tbody>
+</table>
 
 @endsection

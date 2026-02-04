@@ -3,44 +3,41 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use App\Models\Department;
 use Illuminate\Support\Facades\Hash;
-
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class UserSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
-    {   
+    {
+        $department = Department::where('name', 'TCRC')->firstOrFail();
 
         // Admin user
         User::create([
-            'name' => 'Admin User',
-            'email' => 'admin@test.com',
-            'password' => Hash::make('password'),
-            'role' => 'admin',
-            'department' => 'TCRC',
+            'name'          => 'Admin User',
+            'email'         => 'admin@test.com',
+            'password'      => Hash::make('password'),
+            'role'          => 'admin',
+            'department_id' => $department->id,
         ]);
 
-        // Normal staff
+        // Staff user
         User::create([
-            'name' => 'Staff User',
-            'email' => 'staff@test.com',
-            'password' => Hash::make('password'),
-            'role' => 'staff',
-            'department' => 'TCRC',
-             ]);
-        
-             // Another sample intern
+            'name'          => 'Staff User',
+            'email'         => 'staff@test.com',
+            'password'      => Hash::make('password'),
+            'role'          => 'staff',
+            'department_id' => $department->id,
+        ]);
+
+        // HR Manager
         User::create([
-            'name' => 'HR Manager',
-            'email' => 'hr@test.com',
-            'password' => Hash::make('password'),
-            'role' => 'intern',
-            'department' => 'TCRC',
+            'name'          => 'HR Manager',
+            'email'         => 'hr@test.com',
+            'password'      => Hash::make('password'),
+            'role'          => 'intern',
+            'department_id' => $department->id,
         ]);
     }
 }

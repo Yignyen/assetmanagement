@@ -27,11 +27,6 @@
         <input name="role" value="{{ old('role', $user->role ?? '') }}">
     </div>
 
-    <div class="form-group">
-        <label>Department</label>
-        <input name="department" value="{{ old('department', $user->department ?? '') }}">
-    </div>
-
     <button class="btn btn-primary">
         {{ $buttonText }}
     </button>

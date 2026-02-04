@@ -27,8 +27,9 @@
         <tr>
             <td>{{ $user->name }}</td>
             <td>{{ $user->email }}</td>
-            <td>{{ $user->role }}</td>
-            <td>{{ $user->department }}</td>
+            <td>{{ ucfirst($user->role) }}</td>
+            <td>{{ $user->department->name ?? '—' }}</td>
+
             <td>
                 <a href="{{ route('users.edit', $user) }}" class="btn btn-warning">
                     Edit

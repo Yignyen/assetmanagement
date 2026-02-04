@@ -23,15 +23,18 @@
     <tbody>
         @forelse($assets as $asset)
             <tr>
-                <td>{{ $asset->id }}</td>
+                <td>{{ $loop->iteration }}</td>
+
+
                 <td>{{ $asset->name }}</td>
                 <td>{{ $asset->serial_no }}</td>
                 <td>{{ $asset->asset_tag }}</td>
                 <td>{{ $asset->category->name ?? '—' }}</td>
 
-                <td class="{{ $asset->assigned ? 'status-assigned' : 'status-available' }}">
-                         {{ $asset->assigned ? 'Assigned' : 'Available' }}
+                <td class="{{ $asset->assigned_to ? 'status-assigned' : 'status-available' }}">
+                    {{ $asset->assigned_to ? 'Assigned' : 'Available' }}
                 </td>
+
 
 
                 <td>

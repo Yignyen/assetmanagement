@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Support\DepartmentContext;
 
 class ActionLog extends Model
 {
-     protected $fillable = [
+    protected $fillable = [
+        'department_id',   // 🔑 REQUIRED
         'created_by',
         'action_type',
         'item_type',
@@ -22,13 +24,30 @@ class ActionLog extends Model
         'action_date' => 'datetime',
     ];
 
+    /* =======================
+     * GLOBAL SCOPE (TENANT SAFETY)
+     * ======================= */
+    protected static function booted()
+    {
+        static::addGlobalScope('department', function ($query) {
+            $query->where(
+                'department_id',
+                DepartmentContext::id()
+            );
+        });
+    }
+
+    /* =======================
+     * RELATIONSHIPS
+     * ======================= */
+
     // Who performed the action
     public function actor()
     {
         return $this->belongsTo(User::class, 'created_by')->withTrashed();
     }
 
-    // Polymorphic: the thing being acted on (Asset, Accessory, Component)
+    // Polymorphic: the thing being acted on (Asset, User, Location, etc.)
     public function item()
     {
         return $this->morphTo();
@@ -38,5 +57,11 @@ class ActionLog extends Model
     public function target()
     {
         return $this->morphTo()->withTrashed();
+    }
+
+    // Tenant ownership
+    public function department()
+    {
+        return $this->belongsTo(Department::class, 'department_id');
     }
 }

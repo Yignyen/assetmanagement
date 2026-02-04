@@ -1,71 +1,114 @@
 <?php
+
 namespace App\Http\Controllers\Users;
+
 use App\Http\Controllers\Controller;
 use App\Models\User;
-
+use App\Support\DepartmentContext;
 use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
-    //for index    
-    // READ (List users)
+    /**
+     * List users (department scoped)
+     */
     public function index()
     {
-        $users = User::latest()->get();
+        $departmentId = DepartmentContext::id();
+
+        $users = User::where('department_id', $departmentId)
+            ->latest()
+            ->get();
+
         return view('users.index', compact('users'));
     }
 
-    // CREATE form
+    /**
+     * Show create form
+     */
     public function create()
     {
         return view('users.create');
     }
 
-    // STORE new user
+    /**
+     * Store new user
+     */
     public function store(Request $request)
     {
+        $departmentId = DepartmentContext::id();
+
         $request->validate([
-            'name'       => 'required|string|max:255',
-            'email'      => 'required|email|unique:users',
-            'password'   => 'required|min:6',
-            'role'       => 'required',
-            'department' => 'required',
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|email|unique:users',
+            'password' => 'required|min:6',
+            'role'     => 'required|string',
         ]);
 
-        User::create($request->all()); // password auto-hashed ✅
+        User::create([
+            'name'          => $request->name,
+            'email'         => $request->email,
+            'password'      => bcrypt($request->password),
+            'role'          => $request->role,
+            'department_id' => $departmentId,
+        ]);
 
-        return redirect()->route('users.index')
+        return redirect()
+            ->route('users.index')
             ->with('success', 'User created successfully');
     }
 
-    // EDIT form
+    /**
+     * Show edit form
+     */
     public function edit(User $user)
     {
+        if ($user->department_id !== DepartmentContext::id()) {
+            abort(403);
+        }
+
         return view('users.edit', compact('user'));
     }
 
-    // UPDATE user
+    /**
+     * Update user
+     */
     public function update(Request $request, User $user)
     {
+        if ($user->department_id !== DepartmentContext::id()) {
+            abort(403);
+        }
+
         $request->validate([
-            'name'       => 'required|string|max:255',
-            'email'      => 'required|email|unique:users,email,' . $user->id,
-            'role'       => 'required',
-            'department' => 'required',
+            'name'  => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,' . $user->id,
+            'role'  => 'required|string',
         ]);
 
-        $user->update($request->except('password'));
+        $user->update([
+            'name'  => $request->name,
+            'email' => $request->email,
+            'role'  => $request->role,
+        ]);
 
-        return redirect()->route('users.index')
+        return redirect()
+            ->route('users.index')
             ->with('success', 'User updated successfully');
     }
 
-    // DELETE (Soft delete)
+    /**
+     * Delete user (soft delete)
+     */
     public function destroy(User $user)
     {
-        $user->delete(); // triggers asset unassign logic
+        if ($user->department_id !== DepartmentContext::id()) {
+            abort(403);
+        }
 
-        return redirect()->route('users.index')
+        $user->delete();
+
+        return redirect()
+            ->route('users.index')
             ->with('success', 'User deleted successfully');
     }
 }

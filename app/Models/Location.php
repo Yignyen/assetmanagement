@@ -3,66 +3,40 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Location extends Model
 {
-    // app/Models/Location.php
-
     use SoftDeletes;
 
-    protected $fillable = ['name', 'parent_id', 'notes'];
-
-    protected $casts = [
-        'parent_id' => 'integer',
+    /**
+     * Mass assignable attributes
+     */
+    protected $fillable = [
+        'name',
+        'notes',
+        'department_id', // 🔑 REQUIRED
     ];
 
-    // Parent department
-    public function parent()
-    {
-        return $this->belongsTo(Location::class, 'parent_id');
-    }
+    /* =======================
+     * RELATIONSHIPS
+     * ======================= */
 
-    // Child rooms
-    public function children()
-    {
-        return $this->hasMany(Location::class, 'parent_id');
-    }
-
-    // Assets physically here
+    // Assets physically here (optional)
     public function assets()
     {
         return $this->hasMany(Asset::class, 'location_id');
     }
 
-    // Users (department only)
+    // Users optionally assigned to this location
     public function users()
     {
         return $this->hasMany(User::class, 'location_id');
     }
 
-    // Helpers
-    public function isDepartment(): bool
+    // Tenant ownership
+    public function department()
     {
-        return $this->parent_id === null;
-    }
-
-    public function isPlace(): bool
-    {
-        return $this->parent_id !== null;
-    }
-
-    // Scopes
-    public function scopeDepartments($query)
-    {
-        return $query->whereNull('parent_id');
-    }
-
-    public function scopePlaces($query)
-    {
-        return $query->whereNotNull('parent_id');
+        return $this->belongsTo(Department::class, 'department_id');
     }
 }
-
-

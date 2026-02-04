@@ -77,7 +77,7 @@ class Asset extends Model
     /**
      * CHECK IN (return to department pool)
      */
-    public function checkIn(int $departmentId, ?string $note = null): void
+    public function checkIn(?string $note = null): void
     {
         if ($this->assigned_to === null) {
             throw new Exception('Asset is not currently assigned');
@@ -89,7 +89,7 @@ class Asset extends Model
         $this->assigned_to   = null;
         $this->assigned_type = null;
         $this->status        = 'available';
-        $this->location_id   = $departmentId;
+        $this->location_id   = null;
 
         $this->save();
 
@@ -128,17 +128,14 @@ class Asset extends Model
     /**
      * CHECK OUT to LOCATION (room)
      */
-    public function checkOutToLocation(Location $room, ?string $note = null): void
+    public function checkOutToLocation(Location $location, ?string $note = null): void
     {
         $this->guardAvailable();
 
-        if ($room->parent_id === null) {
-            throw new Exception('Assets can only be assigned to rooms');
-        }
-
-        $this->assigned_to   = $room->id;
+        
+        $this->assigned_to   = $location->id;
         $this->assigned_type = Location::class;
-        $this->location_id   = $room->id;
+        $this->location_id   = $location->id;
         $this->status        = 'assigned';
 
         $this->save();
@@ -146,7 +143,7 @@ class Asset extends Model
         ActivityLogger::log(
             action: 'checkout',
             item: $this,
-            target: $room,
+            target: $location,
             note: $note,
             qty: 1
         );
@@ -174,4 +171,12 @@ class Asset extends Model
             qty: 1
         );
     }
+
+
+
+    public function department()
+{
+    return $this->belongsTo(Department::class, 'department_id');
+}
+
 }

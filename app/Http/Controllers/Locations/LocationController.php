@@ -5,18 +5,19 @@ namespace App\Http\Controllers\Locations;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Location;
+use App\Support\DepartmentContext;
 
 class LocationController extends Controller
 {
-    //
-
+    /**
+     * List all locations for current department
+     */
     public function index()
     {
-        $departments = Location::whereNull('parent_id')
-            ->with('children')
+        $locations = Location::where('department_id', DepartmentContext::id())
             ->get();
 
-        return view('locations.index', compact('departments'));
+        return view('locations.index', compact('locations'));
     }
 
     /**
@@ -24,24 +25,24 @@ class LocationController extends Controller
      */
     public function create()
     {
-        // Only departments can be parents
-        $departments = Location::whereNull('parent_id')->get();
-
-        return view('locations.create', compact('departments'));
+        return view('locations.create');
     }
 
     /**
-     * Store location
+     * Store new location
      */
     public function store(Request $request)
     {
         $request->validate([
-            'name'      => 'required|string|max:191',
-            'parent_id' => 'nullable|exists:locations,id',
-            'notes'     => 'nullable|string',
+            'name'  => 'required|string|max:191',
+            'notes' => 'nullable|string',
         ]);
 
-        Location::create($request->only('name', 'parent_id', 'notes'));
+        Location::create([
+            'name'          => $request->name,
+            'notes'         => $request->notes,
+            'department_id' => DepartmentContext::id(),
+        ]);
 
         return redirect()
             ->route('locations.index')
@@ -53,11 +54,11 @@ class LocationController extends Controller
      */
     public function edit(Location $location)
     {
-        $departments = Location::whereNull('parent_id')
-            ->where('id', '!=', $location->id)
-            ->get();
+        if ($location->department_id !== DepartmentContext::id()) {
+            abort(403);
+        }
 
-        return view('locations.edit', compact('location', 'departments'));
+        return view('locations.edit', compact('location'));
     }
 
     /**
@@ -65,13 +66,19 @@ class LocationController extends Controller
      */
     public function update(Request $request, Location $location)
     {
+        if ($location->department_id !== DepartmentContext::id()) {
+            abort(403);
+        }
+
         $request->validate([
-            'name'      => 'required|string|max:191',
-            'parent_id' => 'nullable|exists:locations,id',
-            'notes'     => 'nullable|string',
+            'name'  => 'required|string|max:191',
+            'notes' => 'nullable|string',
         ]);
 
-        $location->update($request->only('name', 'parent_id', 'notes'));
+        $location->update([
+            'name'  => $request->name,
+            'notes' => $request->notes,
+        ]);
 
         return redirect()
             ->route('locations.index')
@@ -83,14 +90,13 @@ class LocationController extends Controller
      */
     public function destroy(Location $location)
     {
-        // Prevent deleting department with places
-        if ($location->children()->exists()) {
-            return back()->with('error', 'Cannot delete department with places');
+        if ($location->department_id !== DepartmentContext::id()) {
+            abort(403);
         }
 
         // Prevent deleting location with assets
         if ($location->assets()->exists()) {
-            return back()->with('error', 'Cannot delete location with assets');
+            return back()->with('error', 'Cannot delete location with assigned assets');
         }
 
         $location->delete();
