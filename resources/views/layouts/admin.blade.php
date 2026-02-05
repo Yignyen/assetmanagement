@@ -76,6 +76,13 @@
         .btn-primary { background:#2563eb; color:white; }
         .btn-warning { background:#f59e0b; color:white; }
         .btn-danger  { background:#dc2626; color:white; }
+
+
+        .btn-outline-danger {
+                                color: #9f1239;
+                                border: 1px solid #fecdd3;
+                            }
+
     </style>
 </head>
 <body>

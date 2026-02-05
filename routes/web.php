@@ -2,9 +2,9 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Assets\AssetController;
-use App\Http\Controllers\ActionLogController;
 use App\Http\Controllers\Users\UserController;
 use App\Http\Controllers\Locations\LocationController;
+use App\Http\Controllers\ActionLogController;
 
 /*
 |--------------------------------------------------------------------------
@@ -17,39 +17,43 @@ Route::get('/', function () {
 
 /*
 |--------------------------------------------------------------------------
-| Assets
+| Assets (CRUD + Domain Actions)
 |--------------------------------------------------------------------------
 */
-Route::get('/assets', [AssetController::class, 'index'])
-    ->name('assets.index');
+Route::prefix('assets')->name('assets.')->group(function () {
+    Route::get('/', [AssetController::class, 'index'])->name('index');
+    Route::get('/create', [AssetController::class, 'create'])->name('create');
+    Route::post('/', [AssetController::class, 'store'])->name('store');
 
-Route::get('/assets/{asset}', [AssetController::class, 'show'])
-    ->name('assets.show');
+    Route::get('/{asset}', [AssetController::class, 'show'])->name('show');
+    Route::get('/{asset}/edit', [AssetController::class, 'edit'])->name('edit');
+    Route::put('/{asset}', [AssetController::class, 'update'])->name('update');
+    Route::delete('/{asset}', [AssetController::class, 'destroy'])->name('destroy');
 
-Route::post('/assets/{asset}/checkout', [AssetController::class, 'checkout'])
-    ->name('assets.checkout');
+    Route::post('/{asset}/checkout', [AssetController::class, 'checkout'])->name('checkout');
+    Route::post('/{asset}/checkin', [AssetController::class, 'checkin'])->name('checkin');
+});
 
-Route::post('/assets/{asset}/checkin', [AssetController::class, 'checkin'])
-    ->name('assets.checkin');
+
 
 /*
 |--------------------------------------------------------------------------
-| Users
+| Users (CRUD)
 |--------------------------------------------------------------------------
 */
 Route::resource('users', UserController::class);
 
 /*
 |--------------------------------------------------------------------------
-| Locations
+| Locations (CRUD)
 |--------------------------------------------------------------------------
 */
 Route::resource('locations', LocationController::class);
 
 /*
 |--------------------------------------------------------------------------
-| Action Logs
+| Action Logs (Read-only)
 |--------------------------------------------------------------------------
 */
-Route::get('/action_logs', [ActionLogController::class, 'index'])
+Route::get('/action-logs', [ActionLogController::class, 'index'])
     ->name('action-logs.index');

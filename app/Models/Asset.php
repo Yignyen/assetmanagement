@@ -16,21 +16,25 @@ class Asset extends Model
         'serial_no',
         'asset_tag',
         'status',
+        'model_id',
         'category_id',
         'purchase_date',
         'location_id',
         'assigned_type',
         'assigned_to',
+        'department_id'
+
     ];
 
     /* =======================
      * RELATIONSHIPS
      * ======================= */
 
-    public function category()
-    {
-        return $this->belongsTo(Category::class);
-    }
+    public function model()
+{
+    return $this->belongsTo(AssetModel::class, 'model_id');
+}
+
 
     // Physical location (department OR room)
     public function location()
@@ -178,5 +182,7 @@ class Asset extends Model
 {
     return $this->belongsTo(Department::class, 'department_id');
 }
+
+
 
 }

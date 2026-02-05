@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Asset;
+use App\Models\AssetModel;
 use App\Models\Category;
 use App\Models\Department;
 use Illuminate\Database\Seeder;
@@ -12,64 +13,57 @@ class AssetSeeder extends Seeder
 {
     public function run(): void
     {
-        // Explicit department (seeder-safe)
-        $department = Department::where('name', 'TCRC')->firstOrFail();
-
-        $items = [
-            ['Laptop', 'Lenovo X240 Laptop', 2],
-            ['Laptop', 'MacBook Pro 14"', 8],
-            ['Desktop', 'Dell Optiplex All-in-One 9010', 12],
-            ['Display', 'Dell Monitor 20"', 7],
-            ['Furniture', 'Chairs', 17],
+        /*
+        |--------------------------------------------------------------------------
+        | Department → Assets mapping
+        |--------------------------------------------------------------------------
+        | Models are GLOBAL
+        | Assets are per-department
+        */
+        $data = [
+            'TCRC' => [
+                ['Laptop', 'Lenovo X240 Laptop', 2],
+                ['Laptop', 'MacBook Pro 14"', 8],
+                ['Desktop', 'Dell Optiplex All-in-One 9010', 12],
+                ['Display', 'Dell Monitor 20"', 7],
+                ['Furniture', 'Chairs', 17],
+            ],
+            'Education Department' => [
+                ['Laptop', 'MacBook Pro 14"', 3],
+                ['Display', 'Dell Monitor 20"', 5],
+                ['Furniture', 'Chairs', 10],
+            ],
         ];
 
-        foreach ($items as [$categoryName, $name, $qty]) {
+        foreach ($data as $departmentName => $items) {
 
-            $category = Category::where('name', $categoryName)
-                ->where('type', 'asset')
-                ->firstOrFail();
+            $department = Department::where('name', $departmentName)->firstOrFail();
 
-            for ($i = 1; $i <= $qty; $i++) {
-                Asset::create([
-                    'name'          => $name,
-                    'serial_no'     => strtoupper(Str::random(10)),
-                    'asset_tag'     => 'AST-' . strtoupper(Str::random(6)),
-                    'status'        => 'available',
-                    'category_id'   => $category->id,
-                    'department_id' => $department->id, // ✅ REQUIRED
+            foreach ($items as [$categoryName, $modelName, $qty]) {
+
+                // Category
+                $category = Category::where('name', $categoryName)
+                    ->where('type', 'asset')
+                    ->firstOrFail();
+
+                // Model (GLOBAL, created once)
+                $model = AssetModel::firstOrCreate([
+                    'name' => $modelName,
+                    'category_id' => $category->id,
                 ]);
+
+                // Assets (per department)
+                for ($i = 1; $i <= $qty; $i++) {
+                    Asset::create([
+                        'name'          => null, // display name
+                        'model_id'      => $model->id,
+                        'serial_no'     => strtoupper(Str::random(10)),
+                        'asset_tag'     => strtoupper($departmentName[0]) . '-' . strtoupper(Str::random(6)),
+                        'status'        => 'available',
+                        'department_id' => $department->id,
+                    ]);
+                }
             }
         }
-
-        // Get Education department
-        $education = Department::where('name', 'Education Department')->firstOrFail();
-
-        // Example category (must exist)
-        $category = Category::where('name', 'Laptop')
-            ->where('type', 'asset')
-            ->firstOrFail();
-
-        // Create Education assets
-        Asset::create([
-            'name'          => 'Education Laptop',
-            'serial_no'     => strtoupper(Str::random(10)),
-            'asset_tag'     => 'EDU-' . strtoupper(Str::random(6)),
-            'status'        => 'available',
-            'category_id'   => $category->id,
-            'department_id' => $education->id,
-        ]);
-
-        Asset::create([
-            'name'          => 'Education Projector',
-            'serial_no'     => strtoupper(Str::random(10)),
-            'asset_tag'     => 'EDU-' . strtoupper(Str::random(6)),
-            'status'        => 'available',
-            'category_id'   => Category::where('name', 'Display')
-                                    ->where('type', 'asset')
-                                    ->value('id'),
-            'department_id' => $education->id,
-        ]);
     }
-    }
-
-
+}

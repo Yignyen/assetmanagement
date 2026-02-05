@@ -41,13 +41,14 @@
     <thead>
         <tr>
             <th>s.no</th>
+            <th>Created At</th>
+            <th>Created By</th>
             <th>Action</th>
-            <th>Performed By</th>
             <th>Item</th>
             <th>Target</th>
             <th>Note</th>
             <th>Qty</th>
-            <th>Action Date</th>
+           
         </tr>
     </thead>
 
@@ -56,22 +57,28 @@
             <tr>
                 <td>{{ $loop->iteration }}</td>
 
+                <td>
+                    {{ $log->action_date?->format('d M Y, h:i A') }}
+                </td>
+                
+                <td>
+                    {{ optional($log->actor)->name ?? 'System' }}
+                </td>
+
                 <td class="action-{{ $log->action_type }}">
                     {{ ucfirst($log->action_type) }}
                 </td>
 
                 <td>
-                    {{ optional($log->actor)->name ?? 'System' }}
-                </td>
-
-                <td>
                     @if($log->item)
-                        {{ $log->item->name ?? 'Unnamed Item' }}
-                    @else
+                {{ 
+                    '#' . ($log->item->serial_no ?? '—') 
+                        . ' - ' . ($log->item->model?->name ?? 'Unknown Model')
+                }}
+                @else
                         —
                 @endif
                 </td>
-
 
                 <td>
                     @if($log->target)
@@ -89,9 +96,7 @@
                     {{ $log->quantity }}
                 </td>
 
-                <td>
-                    {{ $log->action_date?->format('d M Y, h:i A') }}
-                </td>
+                
             </tr>
         @empty
             <tr>

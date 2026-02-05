@@ -8,6 +8,22 @@ class DepartmentContext
     {
         // TEMP: single department (TCRC), education departmemnt -2, finance department -3
         
-        return 2;
+        return 1;
+    }
+    
+
+
+
+
+    public static function code(): string
+    {
+        return match (self::id()) {
+            1 => 'TCRC',
+            2 => 'EDU',
+            3 => 'FIN',
+            default => 'GEN',
+        };
     }
 }
+
+

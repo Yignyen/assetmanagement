@@ -4,58 +4,76 @@
 @section('page-title', 'Assets')
 
 @section('content')
+<a href="{{ route('assets.create') }}" class="btn btn-primary">
+    ➕ Add Asset
+</a>
+<br><br>
 
-<table>
+<table class="table table-bordered">
     <thead>
         <tr>
-            <th>ID</th>
             <th>Asset Name</th>
-            <th>Serial No</th>
             <th>Asset Tag</th>
+            <th>Serial No</th>
+            <th>Model</th>
             <th>Category</th>
             <th>Status</th>
             <th>Assigned To</th>
-            <th>Purchase Date</th>
-            <th>Action</th>
+            <th>Check-in / Check-out</th> {{-- renamed --}}
+            <th>Actions</th> {{-- NEW --}}
         </tr>
     </thead>
 
     <tbody>
         @forelse($assets as $asset)
             <tr>
-                <td>{{ $loop->iteration }}</td>
+                {{-- Asset label (can be NULL) --}}
+                <td>{{ $asset->name  }}</td>
 
-
-                <td>{{ $asset->name }}</td>
-                <td>{{ $asset->serial_no }}</td>
                 <td>{{ $asset->asset_tag }}</td>
-                <td>{{ $asset->category->name ?? '—' }}</td>
 
-                <td class="{{ $asset->assigned_to ? 'status-assigned' : 'status-available' }}">
-                    {{ $asset->assigned_to ? 'Assigned' : 'Available' }}
+                <td>{{ $asset->serial_no ?? '—' }}</td>
+
+                {{-- Model --}}
+                <td>{{ $asset->model?->name ?? '—' }}</td>
+
+                {{-- Category via model --}}
+                <td>{{ $asset->model?->category?->name ?? '—' }}</td>
+
+                {{-- Status --}}
+                <td class="status-{{ $asset->status }}">
+                    {{ ucfirst($asset->status) }}
                 </td>
 
-
-
+                {{-- Assigned --}}
                 <td>
                     @if($asset->assigned)
-                        {{ $asset->assigned->name }}
+                        {{ $asset->assigned->name ?? '—' }}
                     @else
                         —
                     @endif
                 </td>
-
-                <td>{{ $asset->purchase_date ?? '—' }}</td>
-
                 <td>
-                    <a href="{{ route('assets.show', $asset) }}">
-                        View / Update
+                   <a href="{{ route('assets.show', $asset) }}"
+                        class="btn btn-sm btn-outline-danger">
+                        {{ $asset->assigned_to ? 'Check-in' : 'Check-out' }}
                     </a>
+
+
                 </td>
+                {{-- Actions --}}
+    <td>
+        <a href="{{ route('assets.edit', $asset) }}"
+            class="btn btn-sm btn-primary">
+                Edit
+                </a>
+    </td>
+
+
             </tr>
         @empty
             <tr>
-                <td colspan="9" style="text-align:center;">
+                <td colspan="9" class="text-center">
                     No assets found
                 </td>
             </tr>

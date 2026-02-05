@@ -12,15 +12,12 @@ class Category extends Model
         'description',
     ];
 
-    public function assets(){
-        return $this->hasMany(Asset::class);
-    }
+    public function models()
+{
+    return $this->hasMany(AssetModel::class, 'category_id');
+}
 
-    public function accessories(){
-        return $this->hasMany(Accessory::class);
-    }
 
-    public function components(){
-        return $this->hasMany(Component::class);
-    }
+    
+
 }

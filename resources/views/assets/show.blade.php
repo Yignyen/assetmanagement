@@ -11,7 +11,7 @@
 
 <hr>
 
-<p><strong>ID:</strong> {{ $asset->id }}</p>
+<p><strong>Asset Tag:</strong> {{ $asset->asset_tag }}</p>
 <p><strong>Name:</strong> {{ $asset->name }}</p>
 
 <p>
@@ -51,7 +51,6 @@
 
         <br><br>
 
-        {{-- USER --}}
         <div id="user-select" style="display:none;">
             <label>User:</label><br>
             <select name="checkout_to_id" disabled>
@@ -61,7 +60,6 @@
             </select>
         </div>
 
-        {{-- ASSET --}}
         <div id="asset-select" style="display:none;">
             <label>Parent Asset:</label><br>
             <select name="checkout_to_id" disabled>
@@ -71,7 +69,6 @@
             </select>
         </div>
 
-        {{-- LOCATION --}}
         <div id="location-select" style="display:none;">
             <label>Room:</label><br>
             <select name="checkout_to_id" disabled>
@@ -100,20 +97,21 @@
 
     <p>
         <strong>Assigned To:</strong>
-        @if($asset->assigned)
-            {{ class_basename($asset->assigned_type) }}
-            #{{ $asset->assigned->id }}
-            @if(property_exists($asset->assigned, 'name') && $asset->assigned->name)
-                ({{ $asset->assigned->name }})
-            @endif
-        @else
-            —
+        {{ class_basename($asset->assigned_type) }}
+        @if(isset($asset->assigned->name))
+            ({{ $asset->assigned->name }})
         @endif
     </p>
 
     <form method="POST" action="{{ route('assets.checkin', $asset) }}">
         @csrf
 
+        {{-- 👇 this decides where to go AFTER check-in --}}
+        <input type="hidden"
+            name="redirect_to"
+            value="{{ session('redirect_after_checkin') }}">
+
+            
         <label>Note (optional):</label><br>
         <input type="text" name="note">
 

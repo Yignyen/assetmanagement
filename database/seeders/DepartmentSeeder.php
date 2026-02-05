@@ -1,19 +1,15 @@
 <?php
 
 namespace Database\Seeders;
-use App\Models\Department;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Department;
 use Illuminate\Database\Seeder;
 
 class DepartmentSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-         $departments = [
+        $departments = [
             [
                 'name'      => 'TCRC',
                 'tag_color' => '#1e88e5',
@@ -35,7 +31,7 @@ class DepartmentSeeder extends Seeder
             Department::firstOrCreate(
                 ['name' => $data['name']],
                 $data
-        );
+            );
+        }
     }
-}
 }
