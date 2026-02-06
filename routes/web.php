@@ -5,6 +5,7 @@ use App\Http\Controllers\Assets\AssetController;
 use App\Http\Controllers\Users\UserController;
 use App\Http\Controllers\Locations\LocationController;
 use App\Http\Controllers\ActionLogController;
+use App\Http\Controllers\DashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -12,7 +13,7 @@ use App\Http\Controllers\ActionLogController;
 |--------------------------------------------------------------------------
 */
 Route::get('/', function () {
-    return redirect()->route('assets.index');
+    return redirect()->route('dashboard');
 });
 
 /*
@@ -43,6 +44,10 @@ Route::prefix('assets')->name('assets.')->group(function () {
 */
 Route::resource('users', UserController::class);
 
+Route::get('/users/{user}', [UserController::class, 'show'])
+    ->name('users.show');
+
+
 /*
 |--------------------------------------------------------------------------
 | Locations (CRUD)
@@ -57,3 +62,7 @@ Route::resource('locations', LocationController::class);
 */
 Route::get('/action-logs', [ActionLogController::class, 'index'])
     ->name('action-logs.index');
+
+
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->name('dashboard');

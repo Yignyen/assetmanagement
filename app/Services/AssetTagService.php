@@ -19,7 +19,8 @@ class AssetTagService
             $padding = 3;
 
             // Get last asset tag for THIS department only
-            $lastTag = Asset::where('department_id', $departmentId) //only asset from this department
+            $lastTag = Asset::withTrashed()  //includes softdeleted assets,
+                ->where('department_id', $departmentId) //only asset from this department
                 ->where('asset_tag', 'LIKE', $prefix . '%') // and asset tags that starts with this prefix 
                 ->orderBy('asset_tag', 'desc') //sorts matching assey tag from big to small , lattes and highest come first 
                 ->lockForUpdate() //logs this row so no one can read or modify them until  i am done.(works only inside db:transaction)
@@ -34,4 +35,6 @@ class AssetTagService
             return $prefix . str_pad($number, $padding, '0', STR_PAD_LEFT);//onverts a number into a fixed-length string by adding zeros on the left.
         });
     }
+
+    
 }

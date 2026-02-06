@@ -83,6 +83,72 @@
                                 border: 1px solid #fecdd3;
                             }
 
+
+    /* STATS */
+.stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+    margin-bottom: 30px;
+}
+
+.stat-box {
+    padding: 20px;
+    border-radius: 12px;
+    color: #fff;
+    text-align: center;
+    box-shadow: 0 6px 18px rgba(0,0,0,.08);
+}
+
+.stat-box h3 {
+    font-size: 28px;
+    margin: 0;
+}
+
+.stat-box p {
+    margin: 6px 0 0;
+    font-size: 14px;
+    opacity: .9;
+}
+
+/* COLORS */
+.bg-assets     { background: #0ea5e9; }
+.bg-assigned   { background: #6366f1; }
+.bg-available  { background: #22c55e; }
+.bg-users      { background: #f59e0b; }
+.bg-locations  { background: #ef4444; }
+
+/* CHARTS */
+.charts-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.chart-box {
+    background: #fff;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 4px 14px rgba(0,0,0,.06);
+}
+
+.chart-box h4 {
+    margin-bottom: 10px;
+}
+
+.chart-small {
+    height: 180px;
+    width: 180px;
+    margin: auto;
+}
+
+.chart-wide {
+    height: 160px;
+    width: 260px;
+    margin: auto;
+}
+
+
     </style>
 </head>
 <body>
@@ -92,6 +158,7 @@
     <!-- Sidebar -->
     <div class="sidebar">
         <h2>Admin</h2>
+        <a href="{{ route('dashboard') }}">Dashboard</a>
         <a href="{{ route('users.index') }}">Users</a>
         <a href="{{ route('assets.index') }}">Assets</a>
         <a href="{{ route('action-logs.index') }}">Logs</a>

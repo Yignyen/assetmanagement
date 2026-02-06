@@ -60,4 +60,10 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Department::class, 'department_id');
     }
+
+     public function assets()
+    {
+        return $this->hasMany(Asset::class, 'assigned_to')
+            ->where('assigned_type', self::class);
+    }
 }

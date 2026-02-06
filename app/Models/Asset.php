@@ -26,13 +26,19 @@ class Asset extends Model
 
     ];
 
+
+    protected $casts = [
+    'assigned_at' => 'datetime',
+];
+
     /* =======================
      * RELATIONSHIPS
      * ======================= */
 
-    public function model()
+ public function model()
 {
-    return $this->belongsTo(AssetModel::class, 'model_id');
+    return $this->belongsTo(AssetModel::class, 'model_id')
+        ->withTrashed();
 }
 
 
@@ -94,6 +100,7 @@ class Asset extends Model
         $this->assigned_type = null;
         $this->status        = 'available';
         $this->location_id   = null;
+        $this->assigned_at   = null; // ✅ clear
 
         $this->save();
 
@@ -117,6 +124,7 @@ class Asset extends Model
         $this->assigned_type = User::class;
         $this->location_id   = $user->location_id;
         $this->status        = 'assigned';
+        $this->assigned_at   = now();
 
         $this->save();
 
@@ -141,6 +149,7 @@ class Asset extends Model
         $this->assigned_type = Location::class;
         $this->location_id   = $location->id;
         $this->status        = 'assigned';
+        $this->assigned_at   = now();
 
         $this->save();
 
@@ -164,6 +173,7 @@ class Asset extends Model
         $this->assigned_type = Asset::class;
         $this->location_id   = $parentAsset->location_id;
         $this->status        = 'assigned';
+        $this->assigned_at   = now();
 
         $this->save();
 
@@ -181,6 +191,21 @@ class Asset extends Model
     public function department()
 {
     return $this->belongsTo(Department::class, 'department_id');
+}
+
+
+public function getDisplayNameAttribute(): string
+{
+    $model = $this->model?->name ?? 'Unknown Model';
+    $serial = $this->serial_no ?? '—';
+
+    return "{$model} – {$serial}";
+}
+
+    
+public function getCategoryNameAttribute(): string
+{
+    return $this->model?->category?->name ?? '—';
 }
 
 

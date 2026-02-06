@@ -17,8 +17,9 @@ class UserController extends Controller
         $departmentId = DepartmentContext::id();
 
         $users = User::where('department_id', $departmentId)
+            ->with('department') // ✅ eager load
             ->latest()
-            ->get();
+            ->paginate(10);
 
         return view('users.index', compact('users'));
     }
@@ -111,4 +112,19 @@ class UserController extends Controller
             ->route('users.index')
             ->with('success', 'User deleted successfully');
     }
+
+    public function show(User $user)
+{
+    if ($user->department_id !== DepartmentContext::id()) {
+        abort(403);
+    }
+
+    // ✅ EAGER LOAD assets + their models
+    $user->load([
+        'assets.model'
+    ]);
+
+    return view('users.show', compact('user'));
+}
+
 }
