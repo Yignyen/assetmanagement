@@ -50,7 +50,7 @@ class ActionLog extends Model
     // Polymorphic: the thing being acted on (Asset, User, Location, etc.)
     public function item()
     {
-        return $this->morphTo();
+        return $this->morphTo()->withTrashed(); // aslo soft deletes.
     }
 
     // Polymorphic: target (User, Asset, etc.)

@@ -60,7 +60,7 @@ class Asset extends Model
 
     public function logs()
     {
-        return $this->morphMany(ActionLog::class, 'item');
+        return $this->morphMany(ActionLog::class, 'item')->withTrashed();;
     }
 
     /* =======================
