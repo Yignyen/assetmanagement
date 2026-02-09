@@ -23,7 +23,11 @@
     <tbody>
         @forelse($locations as $location)
         <tr>
-            <td>{{ $location->name }}</td>
+            <td>
+            <a href="{{ route('locations.show', $location) }}">
+                {{ $location->name }}
+            </a>
+            </td>
             <td>{{ $location->department->name ?? '—' }}</td>
             <td>
                 <a href="{{ route('locations.edit', $location) }}" class="btn btn-warning">

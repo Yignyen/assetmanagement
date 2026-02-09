@@ -105,4 +105,21 @@ class LocationController extends Controller
             ->route('locations.index')
             ->with('success', 'Location deleted successfully');
     }
+
+    public function show(Location $location)
+{
+    // Department protection
+    if ($location->department_id !== DepartmentContext::id()) {
+        abort(403);
+    }
+
+    // Load assets assigned to this location
+    $assets = $location->assets()
+        ->with('model.category')
+        ->orderBy('id', 'desc')
+        ->get();
+
+    return view('locations.show', compact('location', 'assets'));
+}
+
 }

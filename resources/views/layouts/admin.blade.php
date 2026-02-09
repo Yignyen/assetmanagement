@@ -149,6 +149,24 @@
 }
 
 
+/* ONLY tables wrapped with .table-scroll */
+.table-scroll {
+    overflow-x: auto;
+    width: 100%;
+}
+
+.table-scroll table {
+    min-width: 1200px;   /* adjust if needed */
+    white-space: nowrap;
+}
+/* for checin and check out action in action log */
+.action-checkout {
+    color: #2563eb;font-weight: bold;
+}
+.action-checkin {
+    color: #21850f;font-weight: bold;
+}
+
     </style>
 </head>
 <body>

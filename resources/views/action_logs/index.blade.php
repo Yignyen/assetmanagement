@@ -1,42 +1,11 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Document</title>
+@extends('layouts.admin')
 
-    <style>
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            border: 1px solid #ccc;
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #f5f5f5;
-        }
-        .action-create   { color: green; font-weight: bold; }
-        .action-checkout { color: blue; font-weight: bold; }
-        .action-checkin  { color: purple; font-weight: bold; }
-        .action-update   { color: orange; font-weight: bold; }
-        .action-delete   { color: red; font-weight: bold; }
+@section('title', 'Action_logs')
+@section('page-title', 'Action_logs')
 
-    </style>
-</head>
-<body>
-    <a href="{{ route('assets.index') }}" class="btn btn-warning">
-    ← Back to Assets
-</a>
-<br>
-<br>
+@section('content')
 
-
-    <h2>Action Logs</h2>
-
+<div class="table-scroll">
 <table>
     <thead>
         <tr>
@@ -107,6 +76,5 @@
         @endforelse
     </tbody>
 </table>
-    
-</body>
-</html>
+    </div>
+@endsection

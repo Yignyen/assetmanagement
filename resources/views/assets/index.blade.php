@@ -8,8 +8,8 @@
     ➕ Add Asset
 </a>
 <br><br>
-
-<table class="table table-bordered">
+<div class="table-scroll">
+    <table class="table table-bordered">
     <thead>
         <tr>
             <th>Lable</th>
@@ -80,5 +80,6 @@
         @endforelse
     </tbody>
 </table>
+</div>
 
 @endsection
