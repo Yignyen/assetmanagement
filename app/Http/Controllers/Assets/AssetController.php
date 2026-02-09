@@ -40,6 +40,8 @@ class AssetController extends Controller
             'models' => AssetModel::with('category')
                 ->orderBy('name')
                 ->get(),
+
+                /* 'assetTag' => AssetTagService::generate(), */ //generates asset tag in controller , prevents multiple asset generator when load in new new pages.
             ]);
         }
 

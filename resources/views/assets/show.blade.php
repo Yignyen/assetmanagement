@@ -60,14 +60,20 @@
             </select>
         </div>
 
-        <div id="asset-select" style="display:none;">
-            <label>Parent Asset:</label><br>
-            <select name="checkout_to_id" disabled>
-                @foreach($assets as $parent)
-                    <option value="{{ $parent->id }}">{{ $parent->name }}</option>
-                @endforeach
-            </select>
-        </div>
+        <div id="asset-select" style="display: none">
+    <label>Parent Asset:</label><br>
+
+    <select name="checkout_to_id">
+        <option value="">-- Select Parent Asset --</option>
+
+        @foreach($assets as $parent)
+            <option value="{{ $parent->id }}">
+                {{ $parent->model->name }} - {{ $parent->serial_no }} - {{ $parent->asset_tag }}
+            </option>
+        @endforeach
+    </select>
+</div>
+
 
         <div id="location-select" style="display:none;">
             <label>Room:</label><br>

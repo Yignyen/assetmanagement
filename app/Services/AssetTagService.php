@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Asset;
 use App\Support\DepartmentContext;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class AssetTagService
 {
@@ -32,8 +33,12 @@ class AssetTagService
                 $number = 1;
             }
 // padding - 3 alwys,  001 '0' is character used to fill, add omn left 
-            return $prefix . str_pad($number, $padding, '0', STR_PAD_LEFT);//onverts a number into a fixed-length string by adding zeros on the left.
-        });
+            $tag = $prefix . str_pad($number, $padding, '0', STR_PAD_LEFT);//onverts a number into a fixed-length string by adding zeros on the left.
+            Log::info('Generated Asset Tag',['tag'=>$tag]);
+            return $tag;
+        
+        
+            });
     }
 
     

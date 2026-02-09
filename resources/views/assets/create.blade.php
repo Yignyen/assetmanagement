@@ -37,16 +37,17 @@
         </select>
     </p>
 
-    {{-- Asset Name (OPTIONAL) --}}
-    <p>
-        <label><strong>Asset Name (Optional)</strong></label><br>
-        <input
-            type="text"
-            name="name"
-            value="{{ old('name') }}"
-            placeholder="CEO Laptop"
-        >
-    </p>
+    {{-- Asset Label --}}
+<p>
+    <label><strong>Asset Label (Optional)</strong></label><br>
+    <input
+        type="text"
+        name="label"
+        value="{{ old('label') }}"
+        placeholder="CEO Laptop"
+    >
+</p>
+
 
     {{-- Asset Tag --}}
     <p>

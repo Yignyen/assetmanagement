@@ -22,6 +22,7 @@ class DashboardController extends Controller
 
             'assignedToUsers'     => Asset::where('assigned_type', User::class)->count(),
             'assignedToLocations' => Asset::where('assigned_type', Location::class)->count(),
+            'assignedTOassets'    => Asset::where('assigned_type', Asset::class)->count(),
         ]);
     }
 }

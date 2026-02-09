@@ -2,42 +2,29 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use App\Models\AssetModel;
+use App\Models\Asset;
 
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
-    /**
-     * Seed the application's database.
-     */
-    /* public function run(): void
+    public function run(): void
     {
-        
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        // 1️⃣ Master data first
+        $this->call([
+            DepartmentSeeder::class,
+            UserSeeder::class,
+            CategorySeeder::class, // ✅ FIXED categories (Laptops, Monitors, etc.)
         ]);
-    } */
 
-  public function run(): void
-{
-    $this->call([
-    DepartmentSeeder::class,
-    UserSeeder::class,
-    CategorySeeder::class,
-    AssetModelSeeder::class, // 🔑 MUST be before AssetSeeder
-    AssetSeeder::class,
+        // 2️⃣ Asset models (office-style fake data)
+        AssetModel::factory()
+            ->count(12)
+            ->create();
 
-      /*   AccessorySeeder::class,
-        ComponentSeeder::class, */
-    ]);
-}
-
-
-
-
+        // 3️⃣ Assets (office assets)
+        Asset::factory()
+            ->count(40)
+            ->create(); // name auto-generated in model
+    }
 }

@@ -2,42 +2,37 @@
 
 namespace Database\Seeders;
 
+use Illuminate\Database\Seeder;
 use App\Models\User;
 use App\Models\Department;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Database\Seeder;
 
 class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        $department = Department::where('name', 'TCRC')->firstOrFail();
+        $departments = Department::all();
 
-        // Admin user
-        User::create([
-            'name'          => 'Admin User',
-            'email'         => 'admin@test.com',
-            'password'      => Hash::make('password'),
-            'role'          => 'admin',
-            'department_id' => $department->id,
-        ]);
+        if ($departments->isEmpty()) {
+            $this->command->error('No departments found. Run DepartmentSeeder first.');
+            return;
+        }
 
-        // Staff user
-        User::create([
-            'name'          => 'Staff User',
-            'email'         => 'staff@test.com',
-            'password'      => Hash::make('password'),
-            'role'          => 'staff',
-            'department_id' => $department->id,
-        ]);
+        $departmentId = $departments->first()->id;
 
-        // HR Manager
-        User::create([
-            'name'          => 'HR Manager',
-            'email'         => 'hr@test.com',
-            'password'      => Hash::make('password'),
-            'role'          => 'intern',
-            'department_id' => $department->id,
-        ]);
+        // 1️⃣ Admin user
+        User::factory()
+            ->admin()
+            ->create([
+                'department_id' => $departmentId,
+                'name' => 'Admin User',
+                'email' => 'admin@example.com',
+            ]);
+
+        // 2️⃣ Normal users
+        User::factory()
+            ->count(5)
+            ->create([
+                'department_id' => $departmentId,
+            ]);
     }
 }

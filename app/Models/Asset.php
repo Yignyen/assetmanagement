@@ -6,10 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Helpers\ActivityLogger;
 use Exception;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Asset extends Model
 {
     use SoftDeletes;
+    use HasFactory;
 
     protected $fillable = [
         'name',
@@ -22,7 +24,8 @@ class Asset extends Model
         'location_id',
         'assigned_type',
         'assigned_to',
-        'department_id'
+        'department_id',
+        'label'
 
     ];
 
@@ -30,6 +33,29 @@ class Asset extends Model
     protected $casts = [
     'assigned_at' => 'datetime',
 ];
+    protected static function booted()
+{
+    static::saving(function (Asset $asset) {
+
+        $modelName = $asset->model?->name;
+
+        // If model relation not loaded yet, fetch it
+        if (! $modelName && $asset->model_id) {
+            $modelName = AssetModel::withTrashed()
+                ->find($asset->model_id)?->name;
+        }
+
+        $parts = [
+            $modelName,
+            $asset->asset_tag,
+            $asset->label,
+        ];
+
+        // Build final asset name
+        $asset->name = implode(' - ', array_filter($parts));
+    });
+}
+
 
     /* =======================
      * RELATIONSHIPS

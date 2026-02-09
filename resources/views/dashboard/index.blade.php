@@ -73,10 +73,10 @@ new Chart(assetStatusChart, {
 new Chart(assetAssignmentChart, {
     type: 'bar',
     data: {
-        labels: ['Users', 'Locations'],
+        labels: ['Users', 'Locations','assets'],
         datasets: [{
-            data: [{{ $assignedToUsers }}, {{ $assignedToLocations }}],
-            backgroundColor: ['#6366f1', '#f59e0b'],
+            data: [{{ $assignedToUsers }}, {{ $assignedToLocations }}, {{ $assignedTOassets }}],
+            backgroundColor: ['#6366f1', '#f59e0b','#22c55e'],
             barThickness: 20
         }]
     },

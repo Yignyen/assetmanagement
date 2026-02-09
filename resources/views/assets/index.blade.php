@@ -12,7 +12,7 @@
 <table class="table table-bordered">
     <thead>
         <tr>
-            <th>Asset Name</th>
+            <th>Lable</th>
             <th>Asset Tag</th>
             <th>Serial No</th>
             <th>Model</th>
@@ -28,7 +28,7 @@
         @forelse($assets as $asset)
             <tr>
                 {{-- Asset label (can be NULL) --}}
-                <td>{{ $asset->name  }}</td>
+                <td>{{ $asset->label  }}</td>
 
                 <td>{{ $asset->asset_tag }}</td>
 
