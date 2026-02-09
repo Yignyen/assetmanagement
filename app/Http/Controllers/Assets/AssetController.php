@@ -17,17 +17,36 @@ class AssetController extends Controller
     /**
      * List all assets (department scoped)
      */
-    public function index()
-    {
-        $departmentId = DepartmentContext::id();
+    public function index(Request $request)
+{
+    $departmentId = DepartmentContext::id();
 
-        $assets = Asset::with(['assigned', 'location'])
-            ->where('department_id', $departmentId)
-            ->latest()
-            ->get();
+    $query = Asset::with(['assigned', 'location', 'model.category'])
+        ->where('department_id', $departmentId);
 
-        return view('assets.index', compact('assets'));
+    if ($request->filled('status')) {
+        $query->where('status', $request->status);
     }
+
+    if ($request->filled('search')) {
+        $search = $request->search;
+//checks in asset tag, asset serial no ,asset label, asset model
+        $query->where(function ($q) use ($search) {
+            $q->where('label', 'like', "%{$search}%")
+              ->orWhere('asset_tag', 'like', "%{$search}%")
+              ->orWhere('serial_no', 'like', "%{$search}%")
+              ->orWhereHas('model', fn ($q) =>
+                    $q->where('name', 'like', "%{$search}%"))
+              ->orWhereHas('model.category', fn ($q) =>
+                    $q->where('name', 'like', "%{$search}%"));
+        });
+    }
+
+    $assets = $query->latest()->get();
+
+    return view('assets.index', compact('assets'));
+}
+
 
     /**
      * Show create asset form

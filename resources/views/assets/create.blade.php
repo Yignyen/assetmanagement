@@ -27,7 +27,7 @@
     {{-- Model (REQUIRED) --}}
     <p>
         <label><strong>Model</strong></label><br>
-        <select name="model_id" required>
+        <select name="model_id" class="model-select" required>
             <option value="">— Select Model —</option>
             @foreach ($models as $model)
                 <option value="{{ $model->id }}" @selected(old('model_id') == $model->id)>

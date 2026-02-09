@@ -2,6 +2,9 @@
 <html>
 <head>
     <title>@yield('title', 'Admin')</title>
+   {{--  for select2 --}}
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+
 
     <style>
         body { margin:0; font-family:Segoe UI, sans-serif; background:#f4f6f9; }
@@ -167,7 +170,55 @@
     color: #21850f;font-weight: bold;
 }
 
+
+/* Sidebar collapsible Assets menu */
+.sidebar-parent {
+    display: block;
+    color: #cbd5e1;
+    padding: 10px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.sidebar-parent:hover {
+    background: #1f2937;
+    border-radius: 6px;
+}
+
+.sidebar-sub {
+    display: none;
+    margin-left: 12px;
+}
+
+/* Show submenu only when Assets is clicked */
+#assets-toggle:checked + .sidebar-parent + .sidebar-sub {
+    display: block;
+}
+
+.sidebar-sub a {
+    display: block;
+    font-size: 13px;
+    padding: 6px 10px;
+    color: #9ca3af;
+    text-decoration: none;
+}
+
+.sidebar-sub a:hover {
+    background: #1f2937;
+    color: #fff;
+    border-radius: 6px;
+}
+{{-- for select2 --}}
+.select2-container {
+    width: 30% !important;
+}
+
+
     </style>
+
+
+
+
 </head>
 <body>
 
@@ -177,8 +228,27 @@
     <div class="sidebar">
         <h2>Admin</h2>
         <a href="{{ route('dashboard') }}">Dashboard</a>
-        <a href="{{ route('users.index') }}">Users</a>
-        <a href="{{ route('assets.index') }}">Assets</a>
+
+        <!-- Assets collapsible menu -->
+<div class="sidebar-group">
+    <input type="checkbox" id="assets-toggle" hidden>
+
+    <label for="assets-toggle" class="sidebar-parent">
+        Assets ▸
+    </label>
+
+    <div class="sidebar-sub">
+        <a href="{{ route('assets.index') }}">List All</a>
+        <a href="{{ route('assets.index', ['status' => 'available']) }}">Available</a>
+        <a href="{{ route('assets.index', ['status' => 'assigned']) }}">Assigned</a>
+    </div>
+</div>
+
+
+
+
+        
+        <a href="{{ route('users.index') }}">Users</a>        
         <a href="{{ route('action-logs.index') }}">Logs</a>
         <a href="{{ route('locations.index') }}">Locations</a>
     </div>
@@ -193,6 +263,17 @@
     </div>
 
 </div>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+    $(document).ready(function () {
+        $('.model-select').select2({
+            placeholder: 'Search and select model',
+            width: '100%'
+        });
+    });
+</script>
 
 </body>
 </html>

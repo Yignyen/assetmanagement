@@ -8,6 +8,40 @@
     ➕ Add Asset
 </a>
 <br><br>
+
+@if(request('status') === 'available')
+    <h3>Available Assets</h3>
+@elseif(request('status') === 'assigned')
+    <h3>Assigned Assets</h3>
+@else
+    <h3>All Assets</h3>
+@endif
+
+<form method="GET" action="{{ route('assets.index') }}" style="margin-bottom: 15px;">
+    <input type="text"
+           name="search"
+           value="{{ request('search') }}"
+           placeholder="Search assets (monitor, serial, model...)"
+           style="padding:8px; width:240px;">
+
+    {{-- keep status when searching --}}
+    @if(request('status'))
+        <input type="hidden" name="status" value="{{ request('status') }}">
+    @endif
+
+    <button class="btn btn-primary btn-sm">Search</button>
+
+    @if(request('search'))
+        <a href="{{ route('assets.index', request('status') ? ['status' => request('status')] : []) }}"
+           class="btn btn-warning btn-sm">
+            Clear
+        </a>
+    @endif
+</form>
+
+
+<br>
+
 <div class="table-scroll">
     <table class="table table-bordered">
     <thead>
