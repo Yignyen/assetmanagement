@@ -23,7 +23,10 @@
 
     <tbody>
         @forelse($logs as $log)
-            <tr>
+            <tr class="
+                {{ $log->action_type ==='checkout' ? 'action-checkout' : '' }}
+                {{ $log->action_type === 'checkin' ? 'action-checkin' : '' }}
+                 ">
                 <td>{{ $loop->iteration }}</td>
 
                 <td>
@@ -34,7 +37,7 @@
                     {{ optional($log->actor)->name ?? 'System' }}
                 </td>
 
-                <td class="action-{{ $log->action_type }}">
+                <td>
                     {{ ucfirst($log->action_type) }}
                 </td>
 

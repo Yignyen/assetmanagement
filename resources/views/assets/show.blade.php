@@ -61,15 +61,15 @@
         </div>
 
         <div id="asset-select" style="display: none">
-    <label>Parent Asset:</label><br>
+            <label>Parent Asset:</label><br>
 
-    <select name="checkout_to_id">
-        <option value="">-- Select Parent Asset --</option>
+            <select name="checkout_to_id">
+                <option value="">-- Select Parent Asset --</option>
 
-        @foreach($assets as $parent)
-            <option value="{{ $parent->id }}">
-                {{ $parent->model->name }} - {{ $parent->serial_no }} - {{ $parent->asset_tag }}
-            </option>
+            @foreach($assets as $parent)
+                <option value="{{ $parent->id }}">
+                    {{ $parent->model?->name ?? 'Deleted Model' }} - {{ $parent->serial_no }} - {{ $parent->asset_tag }}
+                </option>
         @endforeach
     </select>
 </div>

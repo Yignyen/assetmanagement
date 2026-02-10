@@ -21,8 +21,8 @@
     <input type="text"
            name="search"
            value="{{ request('search') }}"
-           placeholder="Search assets (monitor, serial, model...)"
-           style="padding:8px; width:240px;">
+           placeholder="Search assets like monitor or assigned to like admin user"
+           style="padding:8px; width:340px;">
 
     {{-- keep status when searching --}}
     @if(request('status'))

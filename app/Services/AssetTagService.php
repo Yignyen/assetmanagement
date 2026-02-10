@@ -16,7 +16,7 @@ class AssetTagService
             $departmentId   = DepartmentContext::id();
             $departmentCode = DepartmentContext::code();
 
-            $prefix  = $departmentCode . '-SVR-';
+            $prefix  = $departmentCode . '-MLT-';
             $padding = 3;
 
             // Get last asset tag for THIS department only

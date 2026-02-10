@@ -75,7 +75,7 @@ new Chart(assetAssignmentChart, {
     data: {
         labels: ['Users', 'Locations','assets'],
         datasets: [{
-            data: [{{ $assignedToUsers }}, {{ $assignedToLocations }}, {{ $assignedTOassets }}],
+            data: [{{ $assignedToUsers }}, {{ $assignedToLocations }}, {{ $assignedToAssets }}],
             backgroundColor: ['#6366f1', '#f59e0b','#22c55e'],
             barThickness: 20
         }]

@@ -17,28 +17,56 @@ class AssetController extends Controller
     /**
      * List all assets (department scoped)
      */
-    public function index(Request $request)
+   public function index(Request $request)
 {
     $departmentId = DepartmentContext::id();
 
     $query = Asset::with(['assigned', 'location', 'model.category'])
         ->where('department_id', $departmentId);
 
+    // Status filter (available / assigned)
     if ($request->filled('status')) {
         $query->where('status', $request->status);
     }
 
+    // Search filter
     if ($request->filled('search')) {
         $search = $request->search;
-//checks in asset tag, asset serial no ,asset label, asset model
+
         $query->where(function ($q) use ($search) {
+
+            // 🔹 Asset fields
             $q->where('label', 'like', "%{$search}%")
               ->orWhere('asset_tag', 'like', "%{$search}%")
               ->orWhere('serial_no', 'like', "%{$search}%")
-              ->orWhereHas('model', fn ($q) =>
-                    $q->where('name', 'like', "%{$search}%"))
-              ->orWhereHas('model.category', fn ($q) =>
-                    $q->where('name', 'like', "%{$search}%"));
+
+            // 🔹 Model name
+              ->orWhereHas('model', function ($q) use ($search) {
+                  $q->where('name', 'like', "%{$search}%");
+              })
+
+            // 🔹 Category name
+              ->orWhereHas('model.category', function ($q) use ($search) {
+                  $q->where('name', 'like', "%{$search}%");
+              })
+
+            // 🔹 Assigned USER name
+              ->orWhereHasMorph(
+                  'assigned',
+                  [\App\Models\User::class],
+                  function ($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%");
+                  }
+              )
+
+            // 🔹 Assigned LOCATION name
+              ->orWhereHasMorph(
+                  'assigned',
+                  [\App\Models\Location::class],
+                  function ($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%");
+                  }
+              );
         });
     }
 

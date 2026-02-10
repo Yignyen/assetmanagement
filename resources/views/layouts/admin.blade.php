@@ -163,11 +163,35 @@
     white-space: nowrap;
 }
 /* for checin and check out action in action log */
-.action-checkout {
-    color: #2563eb;font-weight: bold;
+/* VERY light red (checkout) */
+.action-checkout td {
+    background-color: #fff5f5;
 }
-.action-checkin {
-    color: #21850f;font-weight: bold;
+
+/* VERY light green (checkin) */
+.action-checkin td {
+    background-color: #f6fff8;
+}
+
+
+/* Toolbar for search bar and create button in same row*/ 
+.assets-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    gap: 12px;
+}
+
+.asset-search-form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.asset-search-form input[type="text"] {
+    padding: 8px;
+    width: 340px;
 }
 
 
@@ -208,7 +232,7 @@
     color: #fff;
     border-radius: 6px;
 }
-{{-- for select2 --}}
+/* for select2 */
 .select2-container {
     width: 30% !important;
 }
