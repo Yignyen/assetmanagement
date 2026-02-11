@@ -51,6 +51,18 @@
             @endforeach
         </select>
     </p>
+    <p>
+    <label>Status</label><br>
+    <select name="status_id" required>
+        @foreach($statuses as $status)
+            <option value="{{ $status->id }}"
+                @selected($asset->status_id == $status->id)>
+                {{ $status->name }}
+            </option>
+        @endforeach
+    </select>
+</p>
+
 
     <button class="btn btn-success">
         Update Asset

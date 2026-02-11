@@ -4,20 +4,23 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Helpers\ActivityLogger;
 use Exception;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\StatusLabel;
+/**
+ * @property \App\Models\StatusLabel|null $status
+ */
 
 class Asset extends Model
 {
-    use SoftDeletes;
-    use HasFactory;
+    use SoftDeletes, HasFactory;
 
     protected $fillable = [
         'name',
         'serial_no',
         'asset_tag',
-        'status',
+        'status_id',
         'model_id',
         'category_id',
         'purchase_date',
@@ -26,55 +29,60 @@ class Asset extends Model
         'assigned_to',
         'department_id',
         'label'
-
     ];
 
-
     protected $casts = [
-    'assigned_at' => 'datetime',
-];
+        'assigned_at' => 'datetime',
+    ];
+
+    /*
+    |--------------------------------------------------------------------------
+    | Boot Method (Auto-generate name)
+    |--------------------------------------------------------------------------
+    */
+
     protected static function booted()
-{
-    static::saving(function (Asset $asset) {
+    {
+        static::saving(function (Asset $asset) {
 
-        $modelName = $asset->model?->name;
+            $modelName = $asset->model?->name;
 
-        // If model relation not loaded yet, fetch it
-        if (! $modelName && $asset->model_id) {
-            $modelName = AssetModel::withTrashed()
-                ->find($asset->model_id)?->name;
-        }
+            if (!$modelName && $asset->model_id) {
+                $modelName = AssetModel::withTrashed()
+                    ->find($asset->model_id)?->name;
+            }
 
-        $parts = [
-            $modelName,
-            $asset->asset_tag,
-            $asset->label,
-        ];
+            $parts = [
+                $modelName,
+                $asset->asset_tag,
+                $asset->label,
+            ];
 
-        // Build final asset name
-        $asset->name = implode(' - ', array_filter($parts));
-    });
-}
+            $asset->name = implode(' - ', array_filter($parts));
+        });
+    }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Relationships
+    |--------------------------------------------------------------------------
+    */
 
-    /* =======================
-     * RELATIONSHIPS
-     * ======================= */
+    public function status()
+    {
+        return $this->belongsTo(StatusLabel::class, 'status_id');
+    }
 
- public function model()
-{
-    return $this->belongsTo(AssetModel::class, 'model_id')
-        ->withTrashed();
-}
+    public function model()
+    {
+        return $this->belongsTo(AssetModel::class, 'model_id')->withTrashed();
+    }
 
-
-    // Physical location (department OR room)
     public function location()
     {
         return $this->belongsTo(Location::class, 'location_id');
     }
 
-    // Polymorphic assignment target (history-safe)
     public function assigned()
     {
         return $this->morphTo('assigned', 'assigned_type', 'assigned_to')
@@ -92,55 +100,85 @@ class Asset extends Model
 
     public function logs()
     {
-        return $this->morphMany(ActionLog::class, 'item')->withTrashed();;
+        return $this->morphMany(ActionLog::class, 'item')->withTrashed();
     }
 
-    /* =======================
-     * HELPERS
-     * ======================= */
+    public function department()
+    {
+        return $this->belongsTo(Department::class, 'department_id');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Helpers
+    |--------------------------------------------------------------------------
+    */
 
     protected function guardAvailable(): void
     {
         if ($this->assigned_to !== null) {
-            throw new Exception('Asset is already assigned');
+            throw new Exception('Asset is already assigned.');
+        }
+
+        if (!$this->status?->isDeployable()) {
+            throw new Exception('Asset is not deployable.');
+        }
+
+        if ($this->status?->isArchived()) {
+            throw new Exception('Archived assets cannot be deployed.');
         }
     }
 
-    /* =======================
-     * BUSINESS LOGIC
-     * ======================= */
-
-    /**
-     * CHECK IN (return to department pool)
-     */
-    public function checkIn(?string $note = null): void
+    public function isAvailable(): bool
     {
-        if ($this->assigned_to === null) {
-            throw new Exception('Asset is not currently assigned');
-        }
-
-        // capture previous target for log
-        $previousTarget = $this->assigned;
-
-        $this->assigned_to   = null;
-        $this->assigned_type = null;
-        $this->status        = 'available';
-        $this->location_id   = null;
-        $this->assigned_at   = null; // ✅ clear
-
-        $this->save();
-
-        ActivityLogger::log(
-            action: 'checkin',
-            item: $this,
-            target: $previousTarget,
-            note: $note,
-            qty: 1
-        );
+        return $this->assigned_to === null
+            && $this->status?->isDeployable();
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Business Logic
+    |--------------------------------------------------------------------------
+    */
+
     /**
-     * CHECK OUT to USER
+     * CHECK IN
+     */
+    public function checkIn(?string $note = null, ?int $statusId = null): void
+{
+    if ($this->assigned_to === null) {
+        throw new Exception('Asset is not currently assigned.');
+    }
+
+    $previousTarget = $this->assigned;
+
+    // If status provided, use it
+    if ($statusId) {
+        $this->status_id = $statusId;
+    } else {
+        // fallback to default status
+        $defaultStatus = StatusLabel::where('default_label', true)->first();
+        $this->status_id = $defaultStatus?->id;
+    }
+
+    $this->assigned_to   = null;
+    $this->assigned_type = null;
+    $this->location_id   = null;
+    $this->assigned_at   = null;
+
+    $this->save();
+
+    ActivityLogger::log(
+        action: 'checkin',
+        item: $this,
+        target: $previousTarget,
+        note: $note,
+        qty: 1
+    );
+}
+
+    /**
+     * CHECK OUT TO USER
      */
     public function checkOutToUser(User $user, ?string $note = null): void
     {
@@ -149,7 +187,6 @@ class Asset extends Model
         $this->assigned_to   = $user->id;
         $this->assigned_type = User::class;
         $this->location_id   = $user->location_id;
-        $this->status        = 'assigned';
         $this->assigned_at   = now();
 
         $this->save();
@@ -164,17 +201,15 @@ class Asset extends Model
     }
 
     /**
-     * CHECK OUT to LOCATION (room)
+     * CHECK OUT TO LOCATION
      */
     public function checkOutToLocation(Location $location, ?string $note = null): void
     {
         $this->guardAvailable();
 
-        
         $this->assigned_to   = $location->id;
         $this->assigned_type = Location::class;
         $this->location_id   = $location->id;
-        $this->status        = 'assigned';
         $this->assigned_at   = now();
 
         $this->save();
@@ -189,7 +224,7 @@ class Asset extends Model
     }
 
     /**
-     * CHECK OUT to ANOTHER ASSET
+     * CHECK OUT TO ANOTHER ASSET
      */
     public function checkOutToAsset(Asset $parentAsset, ?string $note = null): void
     {
@@ -198,7 +233,6 @@ class Asset extends Model
         $this->assigned_to   = $parentAsset->id;
         $this->assigned_type = Asset::class;
         $this->location_id   = $parentAsset->location_id;
-        $this->status        = 'assigned';
         $this->assigned_at   = now();
 
         $this->save();
@@ -212,28 +246,22 @@ class Asset extends Model
         );
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Accessors
+    |--------------------------------------------------------------------------
+    */
 
+    public function getDisplayNameAttribute(): string
+    {
+        $model = $this->model?->name ?? 'Unknown Model';
+        $serial = $this->serial_no ?? '—';
 
-    public function department()
-{
-    return $this->belongsTo(Department::class, 'department_id');
-}
+        return "{$model} – {$serial}";
+    }
 
-
-public function getDisplayNameAttribute(): string
-{
-    $model = $this->model?->name ?? 'Unknown Model';
-    $serial = $this->serial_no ?? '—';
-
-    return "{$model} – {$serial}";
-}
-
-    
-public function getCategoryNameAttribute(): string
-{
-    return $this->model?->category?->name ?? '—';
-}
-
-
-
+    public function getCategoryNameAttribute(): string
+    {
+        return $this->model?->category?->name ?? '—';
+    }
 }

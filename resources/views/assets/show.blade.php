@@ -32,68 +32,85 @@
 <hr>
 
 {{-- =====================
-   CHECKOUT FORM
+   CHECKOUT SECTION
 ===================== --}}
+
 @if($asset->assigned_to === null)
-    <h3>Assign Asset</h3>
 
-    <form method="POST" action="{{ route('assets.checkout', $asset) }}">
-        @csrf
+    @if($asset->status?->isDeployable())
 
-        <label>Assign To:</label><br>
+        <h3>Assign Asset</h3>
 
-        <select name="checkout_to_type" required onchange="toggleTarget(this.value)">
-            <option value="">-- Select Type --</option>
-            <option value="user">User</option>
-            <option value="location">Room</option>
-            <option value="asset">Another Asset</option>
-        </select>
+        <form method="POST" action="{{ route('assets.checkout', $asset) }}">
+            @csrf
 
-        <br><br>
+            <label>Assign To:</label><br>
 
-        <div id="user-select" style="display:none;">
-            <label>User:</label><br>
-            <select name="checkout_to_id" disabled>
-                @foreach($users as $user)
-                    <option value="{{ $user->id }}">{{ $user->name }}</option>
-                @endforeach
+            <select name="checkout_to_type" required onchange="toggleTarget(this.value)">
+                <option value="">-- Select Type --</option>
+                <option value="user">User</option>
+                <option value="location">Room</option>
+                <option value="asset">Another Asset</option>
             </select>
+
+            <br><br>
+
+            <div id="user-select" style="display:none;">
+                <label>User:</label><br>
+                <select name="checkout_to_id" disabled>
+                    @foreach($users as $user)
+                        <option value="{{ $user->id }}">{{ $user->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div id="asset-select" style="display:none;">
+                <label>Parent Asset:</label><br>
+                <select name="checkout_to_id" disabled>
+                    <option value="">-- Select Parent Asset --</option>
+                    @foreach($assets as $parent)
+                        <option value="{{ $parent->id }}">
+                            {{ $parent->model?->name ?? 'Deleted Model' }} 
+                            - {{ $parent->serial_no }} 
+                            - {{ $parent->asset_tag }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div id="location-select" style="display:none;">
+                <label>Room:</label><br>
+                <select name="checkout_to_id" disabled>
+                    @foreach($locations as $location)
+                        <option value="{{ $location->id }}">{{ $location->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <br>
+
+            <label>Note (optional):</label><br>
+            <input type="text" name="note">
+
+            <br><br>
+
+            <button class="btn btn-primary">Assign</button>
+        </form>
+
+    @else
+
+        <div style="color:red; margin-top:15px;">
+            This asset cannot be assigned because it is in 
+            <strong>{{ $asset->status?->name }}</strong> state.
         </div>
 
-        <div id="asset-select" style="display: none">
-            <label>Parent Asset:</label><br>
+    @endif
 
-            <select name="checkout_to_id">
-                <option value="">-- Select Parent Asset --</option>
-
-            @foreach($assets as $parent)
-                <option value="{{ $parent->id }}">
-                    {{ $parent->model?->name ?? 'Deleted Model' }} - {{ $parent->serial_no }} - {{ $parent->asset_tag }}
-                </option>
-        @endforeach
-    </select>
-</div>
-
-
-        <div id="location-select" style="display:none;">
-            <label>Room:</label><br>
-            <select name="checkout_to_id" disabled>
-                @foreach($locations as $location)
-                    <option value="{{ $location->id }}">{{ $location->name }}</option>
-                @endforeach
-            </select>
-        </div>
-
-        <br>
-
-        <label>Note (optional):</label><br>
-        <input type="text" name="note">
-
-        <br><br>
-
-        <button class="btn btn-primary">Assign</button>
-    </form>
 @endif
+
+
+
+        
 
 {{-- =====================
    CHECKIN FORM
@@ -112,12 +129,17 @@
     <form method="POST" action="{{ route('assets.checkin', $asset) }}">
         @csrf
 
-        {{-- 👇 this decides where to go AFTER check-in --}}
-        <input type="hidden"
-            name="redirect_to"
-            value="{{ session('redirect_after_checkin') }}">
+        <label>Status After Check-In:</label><br>
+        <select name="status_id" required>
+            @foreach($statuses as $status)
+                <option value="{{ $status->id }}">
+                    {{ $status->name }}
+                </option>
+            @endforeach
+        </select>
 
-            
+        <br><br>
+
         <label>Note (optional):</label><br>
         <input type="text" name="note">
 

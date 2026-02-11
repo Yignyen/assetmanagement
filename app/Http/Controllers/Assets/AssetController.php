@@ -9,228 +9,222 @@ use App\Models\Location;
 use App\Support\DepartmentContext;
 use Illuminate\Http\Request;
 use App\Models\AssetModel;
+use App\Models\StatusLabel;
 use App\Services\AssetTagService;
 use Illuminate\Validation\Rule;
 
 class AssetController extends Controller
 {
     /**
-     * List all assets (department scoped)
+     * List all assets
      */
-   public function index(Request $request)
-{
-    $departmentId = DepartmentContext::id();
+    public function index(Request $request)
+    {
+        $departmentId = DepartmentContext::id();
 
-    $query = Asset::with(['assigned', 'location', 'model.category'])
-        ->where('department_id', $departmentId);
+        $query = Asset::with(['status', 'assigned', 'location', 'model.category'])
+            ->where('department_id', $departmentId);
 
-    // Status filter (available / assigned)
-    if ($request->filled('status')) {
-        $query->where('status', $request->status);
-    }
+        // Lifecycle filter
+        if ($request->filled('type')) {
 
-    // Search filter
-    if ($request->filled('search')) {
-        $search = $request->search;
+            match ($request->type) {
 
-        $query->where(function ($q) use ($search) {
+                'rtd' => $query
+                    ->whereNull('assigned_to')
+                    ->whereHas('status', fn($q) => $q->deployable()),
 
-            // 🔹 Asset fields
-            $q->where('label', 'like', "%{$search}%")
-              ->orWhere('asset_tag', 'like', "%{$search}%")
-              ->orWhere('serial_no', 'like', "%{$search}%")
+                'deployed' => $query->whereNotNull('assigned_to'),
 
-            // 🔹 Model name
-              ->orWhereHas('model', function ($q) use ($search) {
-                  $q->where('name', 'like', "%{$search}%");
-              })
+                'pending' => $query->whereHas('status', fn($q) => $q->pending()),
 
-            // 🔹 Category name
-              ->orWhereHas('model.category', function ($q) use ($search) {
-                  $q->where('name', 'like', "%{$search}%");
-              })
+                'undeployable' => $query->whereHas('status', fn($q) => $q->undeployable()),
 
-            // 🔹 Assigned USER name
-              ->orWhereHasMorph(
-                  'assigned',
-                  [\App\Models\User::class],
-                  function ($q) use ($search) {
+                'archived' => $query->whereHas('status', fn($q) => $q->archived()),
+            };
+        }
+
+        // Search filter
+        if ($request->filled('search')) {
+            $search = $request->search;
+
+            $query->where(function ($q) use ($search) {
+
+                $q->where('label', 'like', "%{$search}%")
+                  ->orWhere('asset_tag', 'like', "%{$search}%")
+                  ->orWhere('serial_no', 'like', "%{$search}%")
+
+                  ->orWhereHas('model', function ($q) use ($search) {
                       $q->where('name', 'like', "%{$search}%");
-                  }
-              )
+                  })
 
-            // 🔹 Assigned LOCATION name
-              ->orWhereHasMorph(
-                  'assigned',
-                  [\App\Models\Location::class],
-                  function ($q) use ($search) {
+                  ->orWhereHas('model.category', function ($q) use ($search) {
                       $q->where('name', 'like', "%{$search}%");
-                  }
-              );
-        });
+                  })
+
+                  ->orWhereHasMorph(
+                      'assigned',
+                      [\App\Models\User::class],
+                      fn($q) => $q->where('name', 'like', "%{$search}%")
+                  )
+
+                  ->orWhereHasMorph(
+                      'assigned',
+                      [\App\Models\Location::class],
+                      fn($q) => $q->where('name', 'like', "%{$search}%")
+                  );
+            });
+        }
+
+        $assets = $query->latest()->paginate(15);
+
+        return view('assets.index', compact('assets'));
     }
-
-    $assets = $query->latest()->get();
-
-    return view('assets.index', compact('assets'));
-}
-
 
     /**
-     * Show create asset form
+     * Create asset form
      */
-    
-
     public function create()
     {
         return view('assets.create', [
             'models' => AssetModel::with('category')
                 ->orderBy('name')
                 ->get(),
-
-                /* 'assetTag' => AssetTagService::generate(), */ //generates asset tag in controller , prevents multiple asset generator when load in new new pages.
-            ]);
-        }
-
+        ]);
+    }
 
     /**
-     * Store new asset
+     * Store asset
      */
     public function store(Request $request)
+    {
+        $departmentId = DepartmentContext::id();
+        $defaultStatus = \App\Models\StatusLabel::where('default_label', true)->firstOrFail();
+
+        $request->validate([
+            'name'      => 'nullable|string|max:255',
+            'serial_no' => 'required|string|max:255',
+            'model_id'  => 'required|integer|exists:models,id',
+            'asset_tag' => [
+                'required',
+                'string',
+                Rule::unique('assets')->where('department_id', $departmentId),
+            ],
+        ]);
+
+        Asset::create([
+            'name'          => $request->name,
+            'model_id'      => $request->model_id,
+            'serial_no'     => $request->serial_no,
+            'asset_tag'     => $request->asset_tag ?: AssetTagService::generate(),
+            'department_id' => $departmentId,
+            'status_id'     => $defaultStatus->id,
+        ]);
+
+        return redirect()
+            ->route('assets.index')
+            ->with('success', 'Asset created successfully');
+    }
+
+    /**
+     * Show asset
+     */
+    public function show(Asset $asset)
 {
+    if ($asset->department_id !== DepartmentContext::id()) {
+        abort(403);
+    }
+
     $departmentId = DepartmentContext::id();
 
-    $request->validate([
-        'name'      => 'nullable|string|max:255',
-        'serial_no' => 'required|string|max:255',
-        'model_id'  => 'required|string|max:255',
+    $users = User::where('department_id', $departmentId)->get();
 
-        'asset_tag' => ['required','string',
-                        Rule::unique('assets')->where('department_id', $departmentId),
-        ],
-    ]);
+    $locations = Location::where('department_id', $departmentId)->get();
 
-    Asset::create([
-        'name'          => $request->name, // optional
-        'model_id'      => $request->model_id,
-        'serial_no'     => $request->serial_no,
+    $assets = Asset::where('department_id', $departmentId)
+        ->where('id', '!=', $asset->id) // prevent assigning to itself
+        ->get();
 
-        // 👇 THIS is the key line
-        'asset_tag'     => $request->asset_tag
-                            ?: AssetTagService::generate(),
+    $statuses = StatusLabel::all();
 
-        'department_id' => $departmentId,
-        'status'        => 'available',
-        'assigned_to'   => null,
-        'assigned_type' => null,
-        'location_id'   => null,
-    ]);
-
-    return redirect()
-        ->route('assets.index')
-        ->with('success', 'Asset created successfully');
+    return view('assets.show', compact(
+        'asset',
+        'users',
+        'locations',
+        'assets',
+        'statuses'
+    ));
 }
 
     /**
-     * Show single asset
+     * Edit asset
      */
-    public function show(Asset $asset)
+    public function edit(Asset $asset)
     {
-        $departmentId = DepartmentContext::id();
-
-        if ($asset->department_id !== $departmentId) {
+        if ($asset->department_id !== DepartmentContext::id()) {
             abort(403);
         }
 
-        return view('assets.show', [
+        if ($asset->assigned_to !== null) {
+            return redirect()
+                ->route('assets.show', $asset)
+                ->with('error', 'Unassign asset before editing');
+        }
+        $models = AssetModel::with('category')->orderBy('name')->get();
+                                            
+        
+
+        $statuses = StatusLabel::all();
+
+        return view('assets.edit', [
             'asset'     => $asset,
-            'users'     => User::where('department_id', $departmentId)->get(),
-            'locations' => Location::where('department_id', $departmentId)->get(),
-            'assets'    => Asset::where('department_id', $departmentId)
-                                ->where('id', '!=', $asset->id)
-                                ->get(),
+            'models'    => $models,
+            'statuses'  => $statuses,
+
         ]);
     }
 
     /**
-     * Checkout asset (user / location / asset)
+     * Update asset
      */
-    public function checkout(Request $request, Asset $asset)
-    {
-        $departmentId = DepartmentContext::id();
+    public function update(Request $request, Asset $asset)
 
-        if ($asset->department_id !== $departmentId) {
+    
+    {
+        if ($asset->department_id !== DepartmentContext::id()) {
             abort(403);
         }
 
-        $request->validate([
-            'checkout_to_type' => 'required|in:user,location,asset',
-            'checkout_to_id'   => 'required|integer',
-            'note'             => 'nullable|string',
-        ]);
-
-        match ($request->checkout_to_type) {
-            'user' => $asset->checkOutToUser(
-                User::where('department_id', $departmentId)
-                    ->findOrFail($request->checkout_to_id),
-                $request->note
-            ),
-
-            'location' => $asset->checkOutToLocation(
-                Location::where('department_id', $departmentId)
-                    ->findOrFail($request->checkout_to_id),
-                $request->note
-            ),
-
-            'asset' => $asset->checkOutToAsset(
-                Asset::where('department_id', $departmentId)
-                    ->findOrFail($request->checkout_to_id),
-                $request->note
-            ),
-        };
-
-        return back()->with('success', 'Asset checked out successfully');
-    }
-
-    /**
-     * Check in asset
-     */
-    public function checkin(Request $request, Asset $asset)
-    {
-        $departmentId = DepartmentContext::id();
-
-        if ($asset->department_id !== $departmentId) {
-            abort(403);
+        if ($asset->assigned_to !== null) {
+            return back()->with('error', 'Unassign asset before updating');
         }
 
         $request->validate([
-            'note' => 'nullable|string',
-            'redirect_to' => 'nullable|string',
+            'name'      => 'nullable|string|max:255',
+            'serial_no' => 'required|string|max:255',
+            'model_id'  => 'required|integer|exists:models,id',
+            'status_id' => 'required|exists:status_labels,id',
+
         ]);
 
-        $asset->checkIn($request->note);
+        $asset->update([
+            'name'      => $request->name,
+            'serial_no' => $request->serial_no,
+            'model_id'  => $request->model_id,
+            'status_id' => $request->status_id,
+        ]);
 
-        // ✅ Case 2: came from Edit intent
-        if ($request->filled('redirect_to')) {
-            return redirect($request->redirect_to)
-                ->with('success', 'Asset unassigned. You can now edit it.');
-        }
-
-        // ✅ Case 1: normal unassign
         return redirect()
-            ->route('assets.index')
-            ->with('success', 'Asset unassigned successfully.');
-
+            ->route('assets.show', $asset)
+            ->with('success', 'Asset updated successfully');
     }
 
     /**
-     * Delete asset (soft delete)
+     * Delete asset
      */
     public function destroy(Asset $asset)
     {
-        $departmentId = DepartmentContext::id();
-
-        if ($asset->department_id !== $departmentId) {
+        if ($asset->department_id !== DepartmentContext::id()) {
             abort(403);
         }
 
@@ -245,60 +239,7 @@ class AssetController extends Controller
             ->with('success', 'Asset deleted successfully');
     }
 
+     
 
-//for edit 
-    public function edit(Asset $asset)
-{
-    $departmentId = DepartmentContext::id();
-
-    if ($asset->department_id !== $departmentId) {
-        abort(403);
-    }
-
-    if ($asset->assigned_to !== null) {
-        return redirect()
-            ->route('assets.show', $asset)
-            ->with('error', 'Unassign asset before editing')
-            ->with('redirect_after_checkin', route('assets.edit', $asset));
-    }
-
-    return view('assets.edit', [
-        'asset'  => $asset,
-        'models' => AssetModel::with('category')
-            ->orderBy('name')
-            ->get(),
-    ]);
-}
-
-
-
-    public function update(Request $request, Asset $asset)
-{
-    $departmentId = DepartmentContext::id();
-
-    if ($asset->department_id !== $departmentId) {
-        abort(403);
-    }
-
-    if ($asset->assigned_to !== null) {
-        return back()->with('error', 'Unassign asset before updating');
-    }
-
-    $request->validate([
-        'name'      => 'nullable|string|max:255',
-        'serial_no' => 'required|string|max:255',
-        'model_id'  => 'required|integer|exists:models,id',
-    ]);
-
-    $asset->update([
-        'name'      => $request->name,
-        'serial_no' => $request->serial_no,
-        'model_id'  => $request->model_id,
-    ]);
-
-    return redirect()
-        ->route('assets.show', $asset)
-        ->with('success', 'Asset updated successfully');
-}
-
+    
 }

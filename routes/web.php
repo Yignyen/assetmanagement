@@ -6,6 +6,11 @@ use App\Http\Controllers\Users\UserController;
 use App\Http\Controllers\Locations\LocationController;
 use App\Http\Controllers\ActionLogController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Assets\AssetCheckoutController;
+use App\Http\Controllers\Assets\AssetCheckinController;
+use App\Http\Controllers\Assets\BulkAssetsController;
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -22,6 +27,21 @@ Route::get('/', function () {
 |--------------------------------------------------------------------------
 */
 Route::prefix('assets')->name('assets.')->group(function () {
+
+    // BULK ROUTES FIRST (IMPORTANT)
+    Route::prefix('bulk')->name('bulk.')->group(function () {
+
+        Route::post('/', [BulkAssetsController::class, 'handle'])
+            ->name('handle');
+
+        Route::get('/edit', [BulkAssetsController::class, 'editForm'])
+            ->name('edit.form');
+
+        Route::post('/edit', [BulkAssetsController::class, 'update'])
+            ->name('edit.update');
+    });
+
+    // CRUD
     Route::get('/', [AssetController::class, 'index'])->name('index');
     Route::get('/create', [AssetController::class, 'create'])->name('create');
     Route::post('/', [AssetController::class, 'store'])->name('store');
@@ -31,10 +51,12 @@ Route::prefix('assets')->name('assets.')->group(function () {
     Route::put('/{asset}', [AssetController::class, 'update'])->name('update');
     Route::delete('/{asset}', [AssetController::class, 'destroy'])->name('destroy');
 
-    Route::post('/{asset}/checkout', [AssetController::class, 'checkout'])->name('checkout');
-    Route::post('/{asset}/checkin', [AssetController::class, 'checkin'])->name('checkin');
-});
+    Route::post('/{asset}/checkout', [AssetCheckoutController::class, 'store'])
+        ->name('checkout');
 
+    Route::post('/{asset}/checkin', [AssetCheckinController::class, 'store'])
+        ->name('checkin');
+});
 
 
 /*

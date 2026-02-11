@@ -20,8 +20,15 @@ class DashboardController extends Controller
             'locationsCount' => Location::where('department_id',$departmentId)->count(),
 
             // chart data
-            'assignedCount'  => Asset::where('department_id',$departmentId)->where('status', 'assigned')->count(),
-            'availableCount' => Asset::where('department_id',$departmentId)->where('status', 'available')->count(),
+            'assignedCount' => Asset::where('department_id', $departmentId)
+                        ->whereNotNull('assigned_to')
+                        ->count(),
+
+            'availableCount' => Asset::where('department_id', $departmentId)
+                        ->whereNull('assigned_to')
+                        ->whereHas('status', fn($q) => $q->deployable())
+                        ->count(),
+
             
             'assignedToUsers' => Asset::where('department_id', $departmentId)->where('assigned_type', User::class)->count(),
 
