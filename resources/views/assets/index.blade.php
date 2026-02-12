@@ -36,7 +36,8 @@
    SEARCH FORM (GET)
    Keeps type filter when searching
 ================================ --}}
-<form method="GET" action="{{ route('assets.index') }}" style="margin-bottom: 15px;">
+<div style="display: flex; justify-content:flex-end; margin-bottom:15px">
+<form method="GET" action="{{ route('assets.index') }}">
     <input type="text"
            name="search"
            value="{{ request('search') }}"
@@ -57,37 +58,38 @@
         </a>
     @endif
 </form>
-
+</div>
 
 
 {{-- =============================================
    BULK ACTION FORM (POST)
    This wraps the bulk dropdown + table
 ============================================== --}}
-<form method="POST" action="{{ route('assets.bulk.handle') }}">
+{{-- <div style="display: flex; justify-content:flex-start; margin-bottom:15px"> --}}
+<form method="POST" action="{{ route('assets.bulk.handle') }}" id="bulk-form">
     @csrf
 
     {{-- ================================
        BULK ACTION BAR (Snipe-IT Style)
     ================================= --}}
-    <div style="display:flex;gap:10px;align-items:center;margin-bottom:15px">
+    
 
         {{-- Dropdown for selecting bulk action --}}
-        <select name="bulk_action" class="bulk-select">
-            <option value="">Bulk Actions</option>
+        <div style="display:flex; justify-content:flex-start; gap:8px; margin-bottom:15px;">
+        <select name="bulk_action" style="padding:8px; width:240px;">
+           
             <option value="edit">Bulk Edit</option>
             <option value="checkout">Bulk Checkout</option>
             <option value="delete">Bulk Delete</option>
-            <option value="maintenance">Add Maintenance</option>
-            <option value="labels">Generate Labels</option>
+            
         </select>
 
         {{-- Submit bulk action --}}
         <button type="submit" class="btn btn-primary btn-sm">
             Go
         </button>
-    </div>
-
+   
+</div>
 
     {{-- ================================
        TABLE WRAPPER
@@ -238,7 +240,32 @@
             </tbody>
 
         </table>
+
+        </div>
+
+        {{-- PAGINATION --}}
+<div class="pagination-wrapper">
+
+
+    <div>
+        Showing {{ $assets->firstItem() }} 
+        to {{ $assets->lastItem() }} 
+        of {{ $assets->total() }} entries
     </div>
+
+    <div>
+         {{ $assets->links('pagination::default') }}
+        {{ $assets->links('pagination::simple-default') }}
+
+    </div>
+
+
+
+       
+
+      
+    </div>
+    
 
 </form>
 
@@ -257,7 +284,7 @@ document.getElementById('select-all').addEventListener('change', function() {
 });
 
 // Prevent submitting bulk form without action or selection
-document.querySelector('form').addEventListener('submit', function(e) {
+document.getElementById('bulk-form').addEventListener('submit', function(e) {
 
     const action = document.querySelector('select[name="bulk_action"]').value;
     const selected = document.querySelectorAll('.row-checkbox:checked');
@@ -273,6 +300,7 @@ document.querySelector('form').addEventListener('submit', function(e) {
         e.preventDefault();
     }
 });
+
 
 </script>
 

@@ -4,21 +4,19 @@ namespace App\Http\Controllers\Assets;
 
 use App\Http\Controllers\Controller;
 use App\Models\Asset;
+use App\Models\StatusLabel;
 use App\Support\DepartmentContext;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App\Models\StatusLabel;
-
 
 class BulkAssetsController extends Controller
 {
-    /**
-     * Main bulk handler
-     * This works like Snipe-IT:
-     * - Receives selected IDs
-     * - Checks action
-     * - Redirects or processes
-     */
+    /*
+    |--------------------------------------------------------------------------
+    | Main Bulk Handler
+    |--------------------------------------------------------------------------
+    */
+
     public function handle(Request $request)
     {
         $request->validate([
@@ -28,7 +26,6 @@ class BulkAssetsController extends Controller
 
         $departmentId = DepartmentContext::id();
 
-        // Only allow assets from current department
         $assets = Asset::where('department_id', $departmentId)
             ->whereIn('id', $request->ids)
             ->get();
@@ -38,23 +35,21 @@ class BulkAssetsController extends Controller
         }
 
         return match ($request->bulk_action) {
-
-            'delete'      => $this->bulkDelete($assets),
-
-            'checkout'    => $this->bulkCheckoutRedirect($assets),
-
-            'edit'        => $this->bulkEditRedirect($assets),
-
-            default       => back()->with('error', 'Invalid bulk action.')
+            'delete'   => $this->bulkDelete($assets),
+            'checkout' => $this->bulkCheckoutRedirect($assets),
+            'edit'     => $this->bulkEditRedirect($assets),
+            default    => back()->with('error', 'Invalid bulk action.'),
         };
     }
 
-    /**
-     * Bulk Delete
-     */
+    /*
+    |--------------------------------------------------------------------------
+    | Bulk Delete
+    |--------------------------------------------------------------------------
+    */
+
     protected function bulkDelete($assets)
     {
-        // Prevent deleting assigned assets
         $assigned = $assets->whereNotNull('assigned_to');
 
         if ($assigned->isNotEmpty()) {
@@ -72,99 +67,157 @@ class BulkAssetsController extends Controller
         return back()->with('success', 'Selected assets deleted successfully.');
     }
 
-    /**
-     * Bulk Checkout Redirect
-     * (Like Snipe-IT → redirect to checkout page)
-     */
+    /*
+    |--------------------------------------------------------------------------
+    | Bulk Checkout Redirect
+    |--------------------------------------------------------------------------
+    */
+
     protected function bulkCheckoutRedirect($assets)
     {
         session()->put('bulk_checkout_ids', $assets->pluck('id')->toArray());
-
         return redirect()->route('assets.bulk.checkout.form');
     }
 
-    /**
-     * Bulk Edit Redirect
-     */
+    /*
+    |--------------------------------------------------------------------------
+    | Bulk Edit Redirect
+    |--------------------------------------------------------------------------
+    */
+
     protected function bulkEditRedirect($assets)
     {
         session()->put('bulk_edit_ids', $assets->pluck('id')->toArray());
-
         return redirect()->route('assets.bulk.edit.form');
     }
 
-
-
-
+    /*
+    |--------------------------------------------------------------------------
+    | Show Bulk Edit Form
+    |--------------------------------------------------------------------------
+    */
 
     public function editForm()
-{
-    $ids = session()->get('bulk_edit_ids');
+    {
+        $ids = session()->get('bulk_edit_ids');
 
-    if (!$ids || count($ids) === 0) {
-        return redirect()->route('assets.index')
-            ->with('error', 'No assets selected.');
+        if (!$ids || count($ids) === 0) {
+            return redirect()->route('assets.index')
+                ->with('error', 'No assets selected.');
+        }
+
+        $departmentId = DepartmentContext::id();
+
+        $assets = Asset::where('department_id', $departmentId)
+            ->whereIn('id', $ids)
+            ->get();
+
+        if ($assets->isEmpty()) {
+            return redirect()->route('assets.index')
+                ->with('error', 'Invalid asset selection.');
+        }
+
+        $statuses = StatusLabel::all();
+
+        return view('assets.bulk-edit', compact('assets', 'statuses'));
     }
 
-    $departmentId = DepartmentContext::id();
+    /*
+    |--------------------------------------------------------------------------
+    | Snipe-IT Style Status Transition Logic
+    |--------------------------------------------------------------------------
+    */
 
-    $assets = Asset::where('department_id', $departmentId)
-        ->whereIn('id', $ids)
-        ->get();
+    protected function canChangeStatus(Asset $asset, StatusLabel $newStatus): bool
+    {
+        $currentStatus = $asset->status;
 
-    if ($assets->isEmpty()) {
-        return redirect()->route('assets.index')
-            ->with('error', 'Invalid asset selection.');
+        $isUnassigned = is_null($asset->assigned_to);
+
+        $bothDeployable =
+            $newStatus->deployable == 1 &&
+            $currentStatus?->deployable == 1;
+
+        $isPending = $newStatus->pending == 1;
+
+        return $isUnassigned || $bothDeployable || $isPending;
     }
 
-    $statuses = StatusLabel::all();
+    /*
+    |--------------------------------------------------------------------------
+    | Process Bulk Update
+    |--------------------------------------------------------------------------
+    */
 
-    return view('assets.bulk-edit', compact('assets', 'statuses'));
+    public function update(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array|min:1',
+            'status_id' => 'nullable|exists:status_labels,id',
+            'label' => 'nullable|string|max:255'
+        ]);
+
+        $departmentId = DepartmentContext::id();
+
+        $assets = Asset::where('department_id', $departmentId)
+            ->whereIn('id', $request->ids)
+            ->get();
+
+        if ($assets->isEmpty()) {
+            return redirect()->route('assets.index')
+                ->with('error', 'No valid assets selected.');
+        }
+
+        DB::transaction(function () use ($assets, $request) {
+
+            foreach ($assets as $asset) {
+
+                $data = [];
+
+                /*
+                |--------------------------------------------------------------------------
+                | STATUS UPDATE (Snipe-IT Logic)
+                |--------------------------------------------------------------------------
+                */
+
+                if ($request->filled('status_id')) {
+
+                    $newStatus = StatusLabel::find($request->status_id);
+
+                    if (!$newStatus) {
+                        throw new \Exception('Invalid status selected.');
+                    }
+
+                    if (!$this->canChangeStatus($asset, $newStatus)) {
+                        return redirect()
+                                ->back()
+                                ->with('error', 'Some assets require check-in before changing to this status.');
 }
 
+                    $data['status_id'] = $newStatus->id;
+                }
 
+                /*
+                |--------------------------------------------------------------------------
+                | LABEL UPDATE
+                |--------------------------------------------------------------------------
+                */
 
+                if ($request->has('clear_label')) {
+                    $data['label'] = null;
+                }
+                elseif ($request->filled('label')) {
+                    $data['label'] = $request->label;
+                }
 
-
-/**
- * Process Bulk Edit Update
- */
-public function update(Request $request)
-{
-    $request->validate([
-        'ids' => 'required|array|min:1',
-        'status_id' => 'required|exists:status_labels,id'
-    ]);
-
-    $departmentId = DepartmentContext::id();
-
-    $assets = Asset::where('department_id', $departmentId)
-        ->whereIn('id', $request->ids)
-        ->get();
-
-    if ($assets->isEmpty()) {
-        return redirect()->route('assets.index')
-            ->with('error', 'No valid assets selected.');
-    }
-
-    DB::transaction(function () use ($assets, $request) {
-        foreach ($assets as $asset) {
-
-            // 🚫 Optional Protection:
-            // Do not allow changing status of assigned assets
-            if ($asset->assigned_to !== null) {
-                continue;
+                if (!empty($data)) {
+                    $asset->update($data);
+                }
             }
 
-            $asset->update([
-                'status_id' => $request->status_id
-            ]);
-        }
-    });
+        });
 
-    return redirect()->route('assets.index')
-        ->with('success', 'Bulk status update successful.');
-}
-
-
+        return redirect()->route('assets.index')
+            ->with('success', 'Bulk update successful.');
+    }
 }

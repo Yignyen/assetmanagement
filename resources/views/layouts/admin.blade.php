@@ -317,15 +317,68 @@ th.sticky-check {
 /* ================= for bulk select bar ================= */
 
 .bulk-select {
-    background: #2f2f2f;
-    color: #fff;
+    background: #eff1f1;
+    color: #0a0202;
     border: 1px solid #444;
     padding: 6px 10px;
     min-width: 200px;
 }
 
 
+/* ================= PAGINATION ================= */
+
+.pagination {
+    list-style: none;
+    display: flex;
+    gap: 6px;
+    padding: 0;
+    margin: 0;
+}
+
+.pagination .page-item {
+    list-style: none;
+}
+
+.pagination .page-link {
+    display: block;
+    padding: 6px 12px;
+    border-radius: 6px;
+    background: #f3f4f6;
+    color: #111827;
+    text-decoration: none;
+    font-size: 14px;
+    border: none;
+}
+
+.pagination .page-item.active .page-link {
+    background: #2563eb;
+    color: white;
+    font-weight: 600;
+}
+
+.pagination .page-link:hover {
+    background: #2563eb;
+    color: white;
+}
+
+
+/*  for  number beside each badge pf assets */
+.count-badge {
+    float: right;
+    /* background: #374151; */
+    color: #fff;
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 12px;
+}
+
+
+
+
     </style>
+    
+{{-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+ --}}
 </head>
 
 <body>
@@ -358,32 +411,38 @@ th.sticky-check {
 
             <a href="{{ route('assets.index') }}"
                class="{{ request()->routeIs('assets.index') && !request('type') ? 'active' : '' }}">
-                All Assets
+               All Assets <span class="count-badge">{{ $sidebarCounts['all'] ?? 0 }}</span>
+
             </a>
 
             <a href="{{ route('assets.index', ['type'=>'rtd']) }}"
                class="{{ request('type')==='rtd' ? 'active' : '' }}">
-                Ready To Deploy
+                Ready To Deploy <span class="count-badge">{{ $sidebarCounts['rtd'] ?? 0 }}</span>
+
             </a>
 
             <a href="{{ route('assets.index', ['type'=>'deployed']) }}"
                class="{{ request('type')==='deployed' ? 'active' : '' }}">
-                Deployed
+                Deployed <span class="count-badge">{{ $sidebarCounts['deployed'] ?? 0 }}</span>
+
             </a>
 
             <a href="{{ route('assets.index', ['type'=>'pending']) }}"
                class="{{ request('type')==='pending' ? 'active' : '' }}">
-                Pending
+                Pending <span class="count-badge">{{ $sidebarCounts['pending'] ?? 0 }}</span>
+
             </a>
 
             <a href="{{ route('assets.index', ['type'=>'undeployable']) }}"
                class="{{ request('type')==='undeployable' ? 'active' : '' }}">
-                Undeployable
+                Undeployable <span class="count-badge">{{ $sidebarCounts['undeployable'] ?? 0 }}</span>
+
             </a>
 
             <a href="{{ route('assets.index', ['type'=>'archived']) }}"
                class="{{ request('type')==='archived' ? 'active' : '' }}">
-                Archived
+                Archived <span class="count-badge">{{ $sidebarCounts['archived'] ?? 0 }}</span>
+
             </a>
 
         </div>
@@ -406,7 +465,21 @@ th.sticky-check {
 
     <!-- ================= MAIN ================= -->
     <div class="main">
-        <h2>@yield('page-title')</h2>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+
+        {{-- LEFT → PAGE TITLE --}}
+        <h2 style="margin:0;">
+            @yield('page-title')
+        </h2>
+
+        {{-- RIGHT → HEADER ACTIONS --}}
+        <div>
+            @yield('page-actions')
+        </div>
+
+    </div>
+
 
         <div class="card">
             @yield('content')
@@ -427,6 +500,7 @@ th.sticky-check {
         });
     });
 </script>
+
 
 </body>
 </html>

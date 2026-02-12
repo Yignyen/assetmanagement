@@ -19,67 +19,107 @@ class AssetController extends Controller
      * List all assets
      */
     public function index(Request $request)
-    {
-        $departmentId = DepartmentContext::id();
+{
+    $departmentId = DepartmentContext::id();
 
-        $query = Asset::with(['status', 'assigned', 'location', 'model.category'])
-            ->where('department_id', $departmentId);
+    $baseQuery = Asset::with(['status', 'assigned', 'location', 'model.category'])
+        ->where('department_id', $departmentId);
 
-        // Lifecycle filter
-        if ($request->filled('type')) {
+    $query = clone $baseQuery;
 
-            match ($request->type) {
+    // ===============================
+    // LIFECYCLE FILTER
+    // ===============================
+    if ($request->filled('type')) {
 
-                'rtd' => $query
-                    ->whereNull('assigned_to')
-                    ->whereHas('status', fn($q) => $q->deployable()),
+        match ($request->type) {
 
-                'deployed' => $query->whereNotNull('assigned_to'),
+            'rtd' => $query
+                ->whereNull('assigned_to')
+                ->whereHas('status', fn($q) => $q->deployable()),
 
-                'pending' => $query->whereHas('status', fn($q) => $q->pending()),
+            'deployed' => $query->whereNotNull('assigned_to'),
 
-                'undeployable' => $query->whereHas('status', fn($q) => $q->undeployable()),
+            'pending' => $query->whereHas('status', fn($q) => $q->pending()),
 
-                'archived' => $query->whereHas('status', fn($q) => $q->archived()),
-            };
-        }
+            'undeployable' => $query->whereHas('status', fn($q) => $q->undeployable()),
 
-        // Search filter
-        if ($request->filled('search')) {
-            $search = $request->search;
-
-            $query->where(function ($q) use ($search) {
-
-                $q->where('label', 'like', "%{$search}%")
-                  ->orWhere('asset_tag', 'like', "%{$search}%")
-                  ->orWhere('serial_no', 'like', "%{$search}%")
-
-                  ->orWhereHas('model', function ($q) use ($search) {
-                      $q->where('name', 'like', "%{$search}%");
-                  })
-
-                  ->orWhereHas('model.category', function ($q) use ($search) {
-                      $q->where('name', 'like', "%{$search}%");
-                  })
-
-                  ->orWhereHasMorph(
-                      'assigned',
-                      [\App\Models\User::class],
-                      fn($q) => $q->where('name', 'like', "%{$search}%")
-                  )
-
-                  ->orWhereHasMorph(
-                      'assigned',
-                      [\App\Models\Location::class],
-                      fn($q) => $q->where('name', 'like', "%{$search}%")
-                  );
-            });
-        }
-
-        $assets = $query->latest()->paginate(15);
-
-        return view('assets.index', compact('assets'));
+            'archived' => $query->whereHas('status', fn($q) => $q->archived()),
+        };
     }
+
+    // ===============================
+    // SEARCH FILTER
+    // ===============================
+    if ($request->filled('search')) {
+        $search = $request->search;
+
+        $query->where(function ($q) use ($search) {
+
+            $q->where('label', 'like', "%{$search}%")
+              ->orWhere('asset_tag', 'like', "%{$search}%")
+              ->orWhere('serial_no', 'like', "%{$search}%")
+
+              ->orWhereHas('model', function ($q) use ($search) {
+                  $q->where('name', 'like', "%{$search}%");
+              })
+
+              ->orWhereHas('model.category', function ($q) use ($search) {
+                  $q->where('name', 'like', "%{$search}%");
+              })
+
+              ->orWhereHasMorph(
+                  'assigned',
+                  [\App\Models\User::class],
+                  fn($q) => $q->where('name', 'like', "%{$search}%")
+              )
+
+              ->orWhereHasMorph(
+                  'assigned',
+                  [\App\Models\Location::class],
+                  fn($q) => $q->where('name', 'like', "%{$search}%")
+              );
+        });
+    }
+
+    // ===============================
+    // PAGINATION
+    // ===============================
+    $assets = $query->latest()->paginate(15);
+
+    // ===============================
+    // SIDEBAR COUNTS
+    // ===============================
+    $counts = [
+        'all' => (clone $baseQuery)->count(),
+
+        'rtd' => (clone $baseQuery)
+            ->whereNull('assigned_to')
+            ->whereHas('status', fn($q) => $q->deployable())
+            ->count(),
+
+        'deployed' => (clone $baseQuery)
+            ->whereNotNull('assigned_to')
+            ->count(),
+
+        'pending' => (clone $baseQuery)
+            ->whereHas('status', fn($q) => $q->pending())
+            ->count(),
+
+        'undeployable' => (clone $baseQuery)
+            ->whereHas('status', fn($q) => $q->undeployable())
+            ->count(),
+
+        'archived' => (clone $baseQuery)
+            ->whereHas('status', fn($q) => $q->archived())
+            ->count(),
+    ];
+
+    return view('assets.index', compact('assets', 'counts'));
+}
+
+    
+    
 
     /**
      * Create asset form
@@ -188,36 +228,51 @@ class AssetController extends Controller
      * Update asset
      */
     public function update(Request $request, Asset $asset)
-
-    
-    {
-        if ($asset->department_id !== DepartmentContext::id()) {
-            abort(403);
-        }
-
-        if ($asset->assigned_to !== null) {
-            return back()->with('error', 'Unassign asset before updating');
-        }
-
-        $request->validate([
-            'name'      => 'nullable|string|max:255',
-            'serial_no' => 'required|string|max:255',
-            'model_id'  => 'required|integer|exists:models,id',
-            'status_id' => 'required|exists:status_labels,id',
-
-        ]);
-
-        $asset->update([
-            'name'      => $request->name,
-            'serial_no' => $request->serial_no,
-            'model_id'  => $request->model_id,
-            'status_id' => $request->status_id,
-        ]);
-
-        return redirect()
-            ->route('assets.show', $asset)
-            ->with('success', 'Asset updated successfully');
+{
+    if ($asset->department_id !== DepartmentContext::id()) {
+        abort(403);
     }
+
+    $request->validate([
+        'name'      => 'nullable|string|max:255',
+        'serial_no' => 'required|string|max:255',
+        'model_id'  => 'required|integer|exists:models,id',
+        'status_id' => 'required|exists:status_labels,id',
+    ]);
+
+    $updatedStatus = StatusLabel::findOrFail($request->status_id);
+
+    // =====================================
+    //  SNIPE-IT STYLE STATUS RULE
+    // =====================================
+
+    $unassigned = empty($asset->assigned_to);
+
+    $deployableTransition =
+        $updatedStatus->deployable &&
+        optional($asset->status)->deployable;
+
+    $pendingTransition = $updatedStatus->pending;
+
+    if (!($unassigned || $deployableTransition || $pendingTransition)) {
+        return back()->with(
+            'error',
+            'Status change not allowed. Assigned assets cannot move to undeployable states.'
+        );
+    }
+
+    $asset->update([
+        'name'      => $request->name,
+        'serial_no' => $request->serial_no,
+        'model_id'  => $request->model_id,
+        'status_id' => $updatedStatus->id,
+    ]);
+
+    return redirect()
+        ->route('assets.show', $asset)
+        ->with('success', 'Asset updated successfully.');
+}
+
 
     /**
      * Delete asset

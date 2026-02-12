@@ -2,14 +2,12 @@
 
 @section('title', 'Users')
 @section('page-title', 'Users List')
-
-@section('content')
-
+@section('page-actions')
 <a href="{{ route('users.create') }}" class="btn btn-primary">
     ➕ Add User
 </a>
-
-<br><br>
+@endsection
+@section('content')
 
 <table>
     <thead>

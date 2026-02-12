@@ -5,9 +5,12 @@
 
 @section('content')
 
+
+@section('page-actions')
 <a href="{{ route('locations.create') }}" class="btn btn-primary">
     ➕ Add Location
 </a>
+@endsection
 
 <br><br>
 
