@@ -205,11 +205,7 @@ class AssetController extends Controller
             abort(403);
         }
 
-        if ($asset->assigned_to !== null) {
-            return redirect()
-                ->route('assets.show', $asset)
-                ->with('error', 'Unassign asset before editing');
-        }
+        
         $models = AssetModel::with('category')->orderBy('name')->get();
                                             
         
@@ -224,10 +220,7 @@ class AssetController extends Controller
         ]);
     }
 
-    /**
-     * Update asset
-     */
-    public function update(Request $request, Asset $asset)
+  public function update(Request $request, Asset $asset)
 {
     if ($asset->department_id !== DepartmentContext::id()) {
         abort(403);
@@ -242,31 +235,42 @@ class AssetController extends Controller
 
     $updatedStatus = StatusLabel::findOrFail($request->status_id);
 
-    // =====================================
-    //  SNIPE-IT STYLE STATUS RULE
-    // =====================================
+    $statusChanged = $asset->status_id != $updatedStatus->id;
 
-    $unassigned = empty($asset->assigned_to);
+    /*
+    |--------------------------------------------------------------------------
+    | 🔥 TRUE SNIPE-STYLE LOGIC
+    |--------------------------------------------------------------------------
+    | If status becomes non-deployable
+    | AND asset is assigned
+    | → auto check-in using model method
+    */
 
-    $deployableTransition =
-        $updatedStatus->deployable &&
-        optional($asset->status)->deployable;
+    if ($statusChanged) {
 
-    $pendingTransition = $updatedStatus->pending;
+        $isNonDeployable =
+            !$updatedStatus->deployable &&
+            !$updatedStatus->pending;
 
-    if (!($unassigned || $deployableTransition || $pendingTransition)) {
-        return back()->with(
-            'error',
-            'Status change not allowed. Assigned assets cannot move to undeployable states.'
-        );
+        if ($isNonDeployable && $asset->assigned_to !== null) {
+
+            // This handles unassignment properly
+            $asset->checkIn(
+                note: 'Auto check-in due to status change',
+                statusId: $updatedStatus->id
+            );
+
+        } else {
+            $asset->status_id = $updatedStatus->id;
+        }
     }
 
-    $asset->update([
-        'name'      => $request->name,
-        'serial_no' => $request->serial_no,
-        'model_id'  => $request->model_id,
-        'status_id' => $updatedStatus->id,
-    ]);
+    // Update normal fields
+    $asset->name      = $request->name;
+    $asset->serial_no = $request->serial_no;
+    $asset->model_id  = $request->model_id;
+
+    $asset->save();
 
     return redirect()
         ->route('assets.show', $asset)

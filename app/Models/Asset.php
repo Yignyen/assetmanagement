@@ -108,33 +108,8 @@ class Asset extends Model
         return $this->belongsTo(Department::class, 'department_id');
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Helpers
-    |--------------------------------------------------------------------------
-    */
-
-    protected function guardAvailable(): void
-    {
-        if ($this->assigned_to !== null) {
-            throw new Exception('Asset is already assigned.');
-        }
-
-        if (!$this->status?->isDeployable()) {
-            throw new Exception('Asset is not deployable.');
-        }
-
-        if ($this->status?->isArchived()) {
-            throw new Exception('Archived assets cannot be deployed.');
-        }
-    }
-
-    public function isAvailable(): bool
-    {
-        return $this->assigned_to === null
-            && $this->status?->isDeployable();
-    }
-
+    
+    
     /*
     |--------------------------------------------------------------------------
     | Business Logic
@@ -182,7 +157,10 @@ class Asset extends Model
      */
     public function checkOutToUser(User $user, ?string $note = null): void
     {
-        $this->guardAvailable();
+    
+        if ($this->assigned_to !== null) {
+        $this->checkIn();
+    }
 
         $this->assigned_to   = $user->id;
         $this->assigned_type = User::class;
@@ -205,8 +183,10 @@ class Asset extends Model
      */
     public function checkOutToLocation(Location $location, ?string $note = null): void
     {
-        $this->guardAvailable();
-
+        if ($this->assigned_to !== null) {
+        $this->checkIn();
+    }
+        
         $this->assigned_to   = $location->id;
         $this->assigned_type = Location::class;
         $this->location_id   = $location->id;
@@ -228,7 +208,9 @@ class Asset extends Model
      */
     public function checkOutToAsset(Asset $parentAsset, ?string $note = null): void
     {
-        $this->guardAvailable();
+       if ($this->assigned_to !== null) {
+        $this->checkIn();
+    }
 
         $this->assigned_to   = $parentAsset->id;
         $this->assigned_type = Asset::class;

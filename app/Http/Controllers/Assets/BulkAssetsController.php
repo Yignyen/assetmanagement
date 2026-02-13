@@ -150,74 +150,75 @@ class BulkAssetsController extends Controller
     */
 
     public function update(Request $request)
-    {
-        $request->validate([
-            'ids' => 'required|array|min:1',
-            'status_id' => 'nullable|exists:status_labels,id',
-            'label' => 'nullable|string|max:255'
-        ]);
+{
+    $request->validate([
+        'ids' => 'required|array|min:1',
+        'status_id' => 'nullable|exists:status_labels,id',
+        'label' => 'nullable|string|max:255'
+    ]);
 
-        $departmentId = DepartmentContext::id();
+    $departmentId = DepartmentContext::id();
 
-        $assets = Asset::where('department_id', $departmentId)
-            ->whereIn('id', $request->ids)
-            ->get();
+    $assets = Asset::where('department_id', $departmentId)
+        ->whereIn('id', $request->ids)
+        ->get();
 
-        if ($assets->isEmpty()) {
-            return redirect()->route('assets.index')
-                ->with('error', 'No valid assets selected.');
-        }
+    if ($assets->isEmpty()) {
+        return redirect()->route('assets.index')
+            ->with('error', 'No valid assets selected.');
+    }
 
-        DB::transaction(function () use ($assets, $request) {
+    $skippedStatus = [];
 
-            foreach ($assets as $asset) {
+    DB::transaction(function () use ($assets, $request, &$skippedStatus) {
 
-                $data = [];
+        foreach ($assets as $asset) {
 
-                /*
-                |--------------------------------------------------------------------------
-                | STATUS UPDATE (Snipe-IT Logic)
-                |--------------------------------------------------------------------------
-                */
+            $data = [];
 
-                if ($request->filled('status_id')) {
+            // ================================
+            // STATUS UPDATE (SNIPE STYLE)
+            // ================================
+            if ($request->filled('status_id')) {
 
-                    $newStatus = StatusLabel::find($request->status_id);
+                $newStatus = StatusLabel::find($request->status_id);
 
-                    if (!$newStatus) {
-                        throw new \Exception('Invalid status selected.');
-                    }
-
-                    if (!$this->canChangeStatus($asset, $newStatus)) {
-                        return redirect()
-                                ->back()
-                                ->with('error', 'Some assets require check-in before changing to this status.');
-}
-
+                if ($newStatus && $this->canChangeStatus($asset, $newStatus)) {
                     $data['status_id'] = $newStatus->id;
-                }
-
-                /*
-                |--------------------------------------------------------------------------
-                | LABEL UPDATE
-                |--------------------------------------------------------------------------
-                */
-
-                if ($request->has('clear_label')) {
-                    $data['label'] = null;
-                }
-                elseif ($request->filled('label')) {
-                    $data['label'] = $request->label;
-                }
-
-                if (!empty($data)) {
-                    $asset->update($data);
+                } else {
+                    // Just record skipped — do NOT break update
+                    $skippedStatus[] = $asset->asset_tag;
                 }
             }
 
-        });
+            // ================================
+            // LABEL UPDATE
+            // ================================
+            if ($request->has('clear_label')) {
+                $data['label'] = null;
+            }
+            elseif ($request->filled('label')) {
+                $data['label'] = $request->label;
+            }
 
+            if (!empty($data)) {
+                $asset->update($data);
+            }
+        }
+    });
+
+    // ================================
+    // AFTER TRANSACTION
+    // ================================
+    if (!empty($skippedStatus)) {
         return redirect()->route('assets.index')
-            ->with('success', 'Bulk update successful.');
+            ->with('warning',
+                'Status not changed for: ' . implode(', ', $skippedStatus)
+            );
     }
+
+    return redirect()->route('assets.index')
+        ->with('success', 'Bulk update successful.');
+}
+
 }
