@@ -39,6 +39,10 @@ Route::prefix('assets')->name('assets.')->group(function () {
 
         Route::post('/edit', [BulkAssetsController::class, 'update'])
             ->name('edit.update');
+        Route::get('/checkout', [BulkAssetsController::class, 'checkoutForm']) 
+            ->name('checkout.form'); 
+        Route::post('/checkout', [BulkAssetsController::class, 'checkoutProcess']) 
+            ->name('checkout.process');
     });
 
     // CRUD

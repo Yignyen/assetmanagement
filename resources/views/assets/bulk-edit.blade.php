@@ -92,10 +92,25 @@
             </label>
         </div>
     </div>
+    
+        {{-- ================= MODEL CHANGE ================= --}}
+<div style="margin-top:30px;">
+    <label><strong>Model Change</strong></label><br>
+
+    <select name="model_id" class="form-control" style="max-width:400px;">
+        <option value="">-- Do Not Change --</option>
+
+        @foreach ($models as $model)
+            <option value="{{ $model->id }}">
+                {{ $model->name }}
+            </option>
+        @endforeach
+    </select>
+</div>
 
 
     {{-- ================= ACTION BUTTONS ================= --}}
-    <div style="margin-top:30px;">
+    <div style="margin-top:45px;">
         <button type="submit" class="btn btn-primary">
             Update Selected Assets
         </button>
