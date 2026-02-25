@@ -12,6 +12,7 @@ use App\Models\AssetModel;
 use App\Models\User;
 use App\Models\Location;
 
+
 class BulkAssetsController extends Controller
 {
     /*
@@ -39,7 +40,7 @@ class BulkAssetsController extends Controller
 
         return match ($request->bulk_action) { //modern version of switch-case 
             'delete'   => $this->bulkDelete($assets),
-            'checkout' => $this->bulkCheckoutRedirect($assets),
+            'checkout' => $this->bulkCheckoutRedirect($assets,$request),
             'edit'     => $this->bulkEditRedirect($assets),
             default    => back()->with('error', 'Invalid bulk action.'),
         };
@@ -76,12 +77,25 @@ class BulkAssetsController extends Controller
     |--------------------------------------------------------------------------
     */
 
-    protected function bulkCheckoutRedirect($assets) //method is called from above  $this->bulkCheckoutRedirect($assets);
+    /* protected function bulkCheckoutRedirect($assets, Request $request) //method is called from above  $this->bulkCheckoutRedirect($assets);
     {
-        session()->put('bulk_checkout_ids', $assets->pluck('id')->toArray());  // extract only Id filed from each models, takes only number id and make to arrray [3,32,4], 
+        request()->session()->flashInput([  
+        'selected_assets' => $assets->pluck('id')->toArray()
+    ]);  // extract only Id filed from each models, takes only number id and make to arrray [3,32,4], 
                                                                             // and temp saved inside session.(session are use as rediect page will lost the id and session used for reminder)
         return redirect()->route('assets.bulk.checkout.form');      
-    }
+    } */
+
+        protected function bulkCheckoutRedirect($assets, Request $request)
+{
+    // Flash selected asset IDs for next request only
+    // This stores them inside session under _old_input
+    $request->session()->flash('_old_input', [
+    'selected_assets' => $assets->pluck('id')->toArray()
+]);
+
+    return redirect()->route('assets.bulk.checkout.form');
+}
     /*
     |--------------------------------------------------------------------------
     | Bulk Edit Redirect
@@ -157,7 +171,7 @@ class BulkAssetsController extends Controller
     public function update(Request $request)
 {
     $request->validate([
-        'ids' => 'required|array|min:1',
+        'selected_assets' => 'required|array|min:1',
         'status_id' => 'nullable|exists:status_labels,id',  //If provided → must exist in column status_labels table
         'label' => 'nullable|string|max:255',
 
@@ -168,7 +182,7 @@ class BulkAssetsController extends Controller
     $departmentId = DepartmentContext::id();
 
     $assets = Asset::where('department_id', $departmentId)
-        ->whereIn('id', $request->ids)
+        ->whereIn('id', $request->selected_assets)
         ->get();
 
     if ($assets->isEmpty()) { //safety cheks
@@ -246,32 +260,50 @@ class BulkAssetsController extends Controller
     |--------------------------------------------------------------------------
     */
 
-
 public function checkoutForm()
 {
-    $ids = session()->get('bulk_checkout_ids');
-
-    if (!$ids || count($ids) === 0) {
+    // Check if we have flashed old input named 'selected_assets'
+    // old() reads data from session flash (flashInput).
+    // If it does not exist OR it is not an array → user did not come via bulk action properly.
+    if (!old('selected_assets') || !is_array(old('selected_assets'))) {
         return redirect()->route('assets.index')
             ->with('error', 'No assets selected.');
     }
 
+    // Get the current department ID (multi-tenant protection).
+    // Ensures user can only access assets inside their department.
     $departmentId = DepartmentContext::id();
 
+    // Fetch assets that:
+    // 1. Belong to this department
+    // 2. Match the flashed selected IDs
+    // old('selected_assets') contains array of asset IDs
     $assets = Asset::where('department_id', $departmentId)
-        ->whereIn('id', $ids)
+        ->whereIn('id', old('selected_assets'))
         ->get();
 
+    // Safety check:
+    // If somehow IDs were tampered or assets deleted before page load
+    // then no valid assets were found → stop process.
     if ($assets->isEmpty()) {
         return redirect()->route('assets.index')
             ->with('error', 'Invalid asset selection.');
     }
 
+    // Business rule:
+    // If any asset is already assigned (assigned_to not null)
+    // bulk checkout should not proceed.
     if ($assets->whereNotNull('assigned_to')->isNotEmpty()) {
         return redirect()->route('assets.index')
             ->with('error', 'Some assets are already assigned.');
     }
 
+    // If all validations pass:
+    // Return the bulk checkout view.
+    // Provide:
+    // - users list for assignment
+    // - locations list for assignment
+    // - all assets (if checkout to asset is allowed)
     return view('assets.bulk-checkout', [
         'assets'    => $assets,
         'users'     => User::where('department_id', $departmentId)->get(),
@@ -294,7 +326,8 @@ public function checkoutForm()
 public function checkoutProcess(Request $request)
 {
     $request->validate([
-        'ids'              => 'required|array|min:1',
+        /* 'ids'              => 'required|array|min:1', */
+        'selected_assets' => 'required|array|min:1',
         'checkout_to_type' => 'required|in:user,location,asset',
         'checkout_to_id'   => 'required|integer',
         'note'             => 'nullable|string',
@@ -303,7 +336,7 @@ public function checkoutProcess(Request $request)
     $departmentId = DepartmentContext::id();
 
     $assets = Asset::where('department_id', $departmentId)
-        ->whereIn('id', $request->ids)
+        ->whereIn('id', $request->selected_assets)
         ->get();
 
     if ($assets->isEmpty()) {

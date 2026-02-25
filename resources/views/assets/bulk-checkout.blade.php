@@ -11,7 +11,7 @@
 
 <hr>
 
-<h3>Bulk Assign ({{ count($assets) }} selected)</h3>
+{{-- <h3>Bulk Assign ({{ count($assets) }} selected)</h3> --}}
 
 {{-- Alerts --}}
 @if(session('success'))
@@ -40,20 +40,20 @@
 
 <form method="POST" action="{{ route('assets.bulk.checkout.process') }}">
     @csrf
+{{-- =====================
+   ASSET SELECT (Snipe-IT Style)
+===================== --}}
 
-    {{-- Hidden Asset IDs --}}
-    @foreach($assets as $asset)
-        <input type="hidden" name="ids[]" value="{{ $asset->id }}">
-    @endforeach
-
-    <h4>Selected Assets:</h4>
-    <ul>
-        @foreach($assets as $asset)
-            <li>
-                {{ $asset->asset_tag }} - {{ $asset->name }}
-            </li>
-        @endforeach
-    </ul>
+@include('components.asset-select', [
+   'translated_name' => 'Assets',
+   'fieldname' => 'selected_assets[]',
+   'multiple' => true,
+   'required' => true,
+   'select_id' => 'assigned_assets_select',
+   'asset_selector_div_id' => 'assets_to_checkout_div',
+   'asset_ids' => old('selected_assets', $assets->pluck('id')->toArray()),
+   'allAssets' => $allAssets
+])
 
     <hr>
 
@@ -146,6 +146,58 @@ function toggleTarget(type) {
         el.closest('div').style.display = 'block';
     }
 }
+
+
+/* 
+$(document).ready(function() {
+
+    $('#assigned_assets_select').select2({
+        ajax: {
+            url: '/ajax/assets',
+            dataType: 'json',
+            delay: 250,
+            data: function (params) {
+                return {
+                    q: params.term
+                };
+            },
+            processResults: function (data) {
+                return data;
+            },
+            cache: true
+        },
+        minimumInputLength: 1,
+        placeholder: 'Search asset...',
+        width: '100%'
+    });
+
+}); */
+
 </script>
+
+@section('scripts')
+<script>
+$('#assigned_assets_select').select2({
+    ajax: {
+        url: '/ajax/assets',
+        dataType: 'json',
+        delay: 250,
+        data: function (params) {
+            return { q: params.term };
+        },
+        processResults: function (data) {
+            return data; // because we already returned { results: [...] }
+        }
+    },
+    minimumInputLength: 1,
+    placeholder: 'Search asset...',
+    allowClear: true,
+    width: '100%'
+});
+</script>
+@endsection
+
+
+
 
 @endsection

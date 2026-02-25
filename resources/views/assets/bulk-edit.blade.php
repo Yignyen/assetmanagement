@@ -43,7 +43,7 @@
 
     {{-- Hidden IDs --}}
     @foreach($assets as $asset)
-        <input type="hidden" name="ids[]" value="{{ $asset->id }}">
+        <input type="hidden" name="selected_assets[]" value="{{ $asset->id }}">
     @endforeach
 
 

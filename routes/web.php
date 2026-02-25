@@ -9,6 +9,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Assets\AssetCheckoutController;
 use App\Http\Controllers\Assets\AssetCheckinController;
 use App\Http\Controllers\Assets\BulkAssetsController;
+use Illuminate\Http\Request;
 
 
 
@@ -92,3 +93,40 @@ Route::get('/action-logs', [ActionLogController::class, 'index'])
 
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->name('dashboard');
+
+//for bulk checkout sleect
+
+Route::get('/ajax/assets', function (Request $request) {
+
+    $search = $request->get('q');
+
+    return \App\Models\Asset::where('name', 'like', "%{$search}%")
+        ->orWhere('asset_tag', 'like', "%{$search}%")
+        ->limit(20)
+        ->get()
+        ->map(function ($asset) {
+            return [
+                'id' => $asset->id,
+                'text' => $asset->asset_tag . ' - ' . $asset->name
+            ];
+        });
+
+});
+Route::get('/ajax/assets', function (\Illuminate\Http\Request $request) {
+
+    $query = \App\Models\Asset::query();
+
+    if ($request->q) {
+        $query->where('asset_tag', 'like', '%' . $request->q . '%')
+              ->orWhere('name', 'like', '%' . $request->q . '%');
+    }
+
+    return response()->json([
+        'results' => $query->limit(20)->get()->map(function ($asset) {
+            return [
+                'id' => $asset->id,
+                'text' => $asset->asset_tag . ' - ' . $asset->name
+            ];
+        })
+    ]);
+});
