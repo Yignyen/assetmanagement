@@ -125,7 +125,7 @@ Route::get('/ajax/assets', function (\Illuminate\Http\Request $request) {
         'results' => $query->limit(20)->get()->map(function ($asset) {
             return [
                 'id' => $asset->id,
-                'text' => $asset->asset_tag . ' - ' . $asset->name
+                'text' => $asset->asset_tag . ' - ' . $asset->model->name
             ];
         })
     ]);
