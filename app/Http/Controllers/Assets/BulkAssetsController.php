@@ -39,7 +39,7 @@ class BulkAssetsController extends Controller
         }
 
         return match ($request->bulk_action) { //modern version of switch-case 
-            'delete'   => $this->bulkDelete($assets),
+            'delete' => $this->bulkDeleteRedirect($assets, $request),
             'checkout' => $this->bulkCheckoutRedirect($assets,$request),
             'edit'     => $this->bulkEditRedirect($assets),
             default    => back()->with('error', 'Invalid bulk action.'),
@@ -52,25 +52,130 @@ class BulkAssetsController extends Controller
     |--------------------------------------------------------------------------
     */
 
-    protected function bulkDelete($assets)
-    {
-        $assigned = $assets->whereNotNull('assigned_to');
+   protected function bulkDelete($assets)
+{
+    // Find assigned assets
+    $assignedAssets = $assets->whereNotNull('assigned_to');
 
-        if ($assigned->isNotEmpty()) {
-            return back()->with('error',
-                'Some selected assets are assigned. Please check-in before deleting.'
-            );
-        }
+    if ($assignedAssets->isNotEmpty()) {
 
-        DB::transaction(function () use ($assets) {
-            foreach ($assets as $asset) {
-                $asset->delete();
-            }
-        });
+        $blockedTags = $assignedAssets->pluck('asset_tag')->toArray();
 
-        return back()->with('success', 'Selected assets deleted successfully.');
+        return back()
+            ->with('delete_blocked', $blockedTags)
+            ->with('error', 'Some assets are currently assigned and cannot be deleted.');
     }
 
+    DB::transaction(function () use ($assets) {
+        foreach ($assets as $asset) {
+            $asset->delete(); // Soft delete
+        }
+    });
+
+    return back()->with('success', 'Selected assets deleted successfully.');
+}
+
+//redirect for bulk delete
+
+protected function bulkDeleteRedirect($assets, Request $request)
+{
+    // Store selected IDs in session
+    $request->session()->put(
+        'bulk_delete_ids',
+        $assets->pluck('id')->toArray()
+    );
+
+    return redirect()->route('assets.bulk.delete.confirm');
+}
+
+
+//bulk delete confirmation
+
+public function bulkDeleteConfirm()
+{
+    $departmentId = DepartmentContext::id();
+
+    $ids = session('bulk_delete_ids', []);
+
+    if (empty($ids)) {
+        return redirect()->route('assets.index')
+            ->with('error', 'No assets selected.');
+    }
+
+    $assets = Asset::with(['location', 'assigned'])
+        ->where('department_id', $departmentId)
+        ->whereIn('id', $ids)
+        ->get();
+
+    if ($assets->isEmpty()) {
+        return redirect()->route('assets.index')
+            ->with('error', 'Invalid asset selection.');
+    }
+
+    return view('assets.bulk-delete', compact('assets'));
+}
+
+//final bulk delete process
+
+public function bulkDeleteProcess()
+{
+    $departmentId = DepartmentContext::id();
+
+    $ids = session()->pull('bulk_delete_ids', []);
+
+    if (empty($ids)) {
+        return redirect()->route('assets.index')
+            ->with('error', 'No assets selected.');
+    }
+
+    $assets = Asset::where('department_id', $departmentId)
+        ->whereIn('id', $ids)
+        ->get();
+
+    if ($assets->isEmpty()) {
+        return redirect()->route('assets.index')
+            ->with('error', 'No valid assets found.');
+    }
+
+    // Split assigned vs deletable
+    $assignedAssets = $assets->whereNotNull('assigned_to');
+    $deletableAssets = $assets->whereNull('assigned_to');
+
+    DB::transaction(function () use ($deletableAssets) {
+        foreach ($deletableAssets as $asset) {
+            $asset->delete(); // Soft delete
+        }
+    });
+
+    // Prepare messages
+    if ($assignedAssets->isNotEmpty() && $deletableAssets->isNotEmpty()) {
+
+        $blockedTags = $assignedAssets->pluck('asset_tag')->implode(', ');
+
+        return redirect()->route('assets.index')
+            ->with('error',
+                'Asset Tags: ' . $blockedTags .
+                ' are currently checked out. Check in these devices before deletion.'
+            )
+            ->with('success',
+                $deletableAssets->count() . ' assets were deleted successfully.'
+            );
+    }
+
+    if ($assignedAssets->isNotEmpty()) {
+
+        $blockedTags = $assignedAssets->pluck('asset_tag')->implode(', ');
+
+        return redirect()->route('assets.index')
+            ->with('error',
+                'Asset Tags: ' . $blockedTags .
+                ' are currently checked out. Check in these devices before deletion.'
+            );
+    }
+
+    return redirect()->route('assets.index')
+        ->with('success', 'Assets deleted successfully.');
+}
     /*
     |--------------------------------------------------------------------------
     | Bulk Checkout Redirect

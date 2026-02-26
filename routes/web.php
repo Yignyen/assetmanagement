@@ -44,7 +44,15 @@ Route::prefix('assets')->name('assets.')->group(function () {
             ->name('checkout.form'); 
         Route::post('/checkout', [BulkAssetsController::class, 'checkoutProcess']) 
             ->name('checkout.process');
-    });
+
+        //bulk delete route
+
+        Route::get('/delete', [BulkAssetsController::class, 'bulkDeleteConfirm'])
+            ->name('delete.confirm');
+
+        Route::post('/delete', [BulkAssetsController::class, 'bulkDeleteProcess'])
+            ->name('delete.process');
+        });
 
     // CRUD
     Route::get('/', [AssetController::class, 'index'])->name('index');
@@ -99,3 +107,9 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
 
 Route::get('/ajax/assets', [BulkAssetsController::class, 'ajaxAssets'])
     ->name('ajax.assets');
+
+
+
+
+
+
