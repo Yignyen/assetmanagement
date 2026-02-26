@@ -86,7 +86,7 @@ class BulkAssetsController extends Controller
         return redirect()->route('assets.bulk.checkout.form');      
     } */
 
-        protected function bulkCheckoutRedirect($assets, Request $request)
+        /* protected function bulkCheckoutRedirect($assets, Request $request)
 {
     // Flash selected asset IDs for next request only
     // This stores them inside session under _old_input
@@ -95,8 +95,35 @@ class BulkAssetsController extends Controller
 ]);
 
     return redirect()->route('assets.bulk.checkout.form');
-}
-    /*
+} */
+protected function bulkCheckoutRedirect($assets, Request $request)
+{
+    // Split invalid (undeployable OR already assigned)
+    $invalid = $assets->filter(function ($asset) {
+        return $asset->status?->deployable == 0 || !is_null($asset->assigned_to);
+    });
+
+    $valid = $assets->diff($invalid);
+
+    // Always go to checkout page
+    $request->session()->flash('_old_input', [
+        'selected_assets' => $valid->pluck('id')->values()->toArray()
+    ]);
+
+    // If some were removed → show warning
+    if ($invalid->isNotEmpty()) {
+        $removedTags = $invalid->pluck('asset_tag')->toArray();
+        $remainingTags = $valid->pluck('asset_tag')->toArray();
+
+        return redirect()
+                    ->route('assets.bulk.checkout.form')
+                    ->with('removed_assets', $removedTags)
+                    ->with('remaining_assets', $remainingTags)
+                    ->with('warning', true);
+    }
+
+    return redirect()->route('assets.bulk.checkout.form');
+}  /*
     |--------------------------------------------------------------------------
     | Bulk Edit Redirect
     |--------------------------------------------------------------------------
@@ -262,56 +289,40 @@ class BulkAssetsController extends Controller
 
 public function checkoutForm()
 {
-    // Check if we have flashed old input named 'selected_assets'
-    // old() reads data from session flash (flashInput).
-    // If it does not exist OR it is not an array → user did not come via bulk action properly.
-    if (!old('selected_assets') || !is_array(old('selected_assets'))) {
+    $departmentId = DepartmentContext::id();
+
+    $selectedIds = old('selected_assets', []);
+
+    // If user did not come from bulk flow at all
+    if (!is_array($selectedIds)) {
         return redirect()->route('assets.index')
             ->with('error', 'No assets selected.');
     }
 
-    // Get the current department ID (multi-tenant protection).
-    // Ensures user can only access assets inside their department.
-    $departmentId = DepartmentContext::id();
+    // Load assets if any IDs exist
+    $assets = collect();
 
-    // Fetch assets that:
-    // 1. Belong to this department
-    // 2. Match the flashed selected IDs
-    // old('selected_assets') contains array of asset IDs
-    $assets = Asset::where('department_id', $departmentId)
-        ->whereIn('id', old('selected_assets'))
-        ->get();
-
-    // Safety check:
-    // If somehow IDs were tampered or assets deleted before page load
-    // then no valid assets were found → stop process.
-    if ($assets->isEmpty()) {
-        return redirect()->route('assets.index')
-            ->with('error', 'Invalid asset selection.');
+    if (!empty($selectedIds)) {
+        $assets = Asset::with('status')
+            ->where('department_id', $departmentId)
+            ->whereIn('id', $selectedIds)
+            ->get();
     }
 
-    // Business rule:
-    // If any asset is already assigned (assigned_to not null)
-    // bulk checkout should not proceed.
-    if ($assets->whereNotNull('assigned_to')->isNotEmpty()) {
-        return redirect()->route('assets.index')
-            ->with('error', 'Some assets are already assigned.');
-    }
+    // IMPORTANT:
+    // We do NOT block empty collection anymore.
+    // That allows page to open even if all were removed.
 
-    // If all validations pass:
-    // Return the bulk checkout view.
-    // Provide:
-    // - users list for assignment
-    // - locations list for assignment
-    // - all assets (if checkout to asset is allowed)
     return view('assets.bulk-checkout', [
         'assets'    => $assets,
         'users'     => User::where('department_id', $departmentId)->get(),
         'locations' => Location::where('department_id', $departmentId)->get(),
-        'allAssets' => Asset::where('department_id', $departmentId)->get(),
+        'allAssets' => Asset::where('department_id', $departmentId)
+                            ->deployable()
+                            ->whereNull('assigned_to')
+                            ->get(),
     ]);
 }
- 
 
 /*
     |--------------------------------------------------------------------------
@@ -345,10 +356,23 @@ public function checkoutProcess(Request $request)
     }
 
     // Prevent already assigned assets
+   /*  if ($assets->whereNotNull('assigned_to')->isNotEmpty()) {
+        return redirect()->route('assets.index')
+            ->with('error', 'Some assets are already assigned.');
+    } */
+
+    // Prevent undeployable
+    if ($assets->filter(fn($a) => $a->status?->deployable == 0)->isNotEmpty()) {
+        return redirect()->route('assets.index')
+            ->with('error', 'Some selected assets are not deployable.');
+    }
+
+    // Prevent assigned
     if ($assets->whereNotNull('assigned_to')->isNotEmpty()) {
         return redirect()->route('assets.index')
             ->with('error', 'Some assets are already assigned.');
     }
+
 
     DB::transaction(function () use ($assets, $request, $departmentId) {
 
@@ -380,4 +404,35 @@ public function checkoutProcess(Request $request)
     return redirect()->route('assets.index')
         ->with('success', 'Bulk checkout successful.');
 } 
+
+
+
+public function ajaxAssets(Request $request)
+{
+    $departmentId = DepartmentContext::id();
+
+    $query = Asset::with(['status','model'])
+        ->where('department_id', $departmentId)
+        ->deployable()
+        ->whereNull('assigned_to');
+
+    if ($request->filled('q')) {
+        $query->where(function ($q) use ($request) {
+            $q->where('asset_tag', 'like', "%{$request->q}%")
+              ->orWhere('serial_no', 'like', "%{$request->q}%")
+              ->orWhere('name', 'like', "%{$request->q}%");
+        });
+    }
+
+    return response()->json([
+        'results' => $query->limit(20)->get()->map(function ($asset) {
+            return [
+                'id'   => $asset->id,
+                'text' => $asset->asset_tag . ' - ' . ($asset->model?->name ?? ''),
+            ];
+        })
+    ]);
 }
+}
+
+

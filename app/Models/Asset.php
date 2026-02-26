@@ -228,6 +228,34 @@ class Asset extends Model
         );
     }
 
+
+
+    /*
+|--------------------------------------------------------------------------
+| Query Scopes (Snipe-Style)
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * Scope: Only deployable assets
+ */
+public function scopeDeployable($query)
+{
+    return $query->whereHas('status', function ($q) {
+        $q->where('deployable', 1);
+    });
+}
+
+/**
+ * Scope: Only undeployable assets
+ */
+public function scopeUndeployable($query)
+{
+    return $query->whereHas('status', function ($q) {
+        $q->where('deployable', 0);
+    });
+}
+
     /*
     |--------------------------------------------------------------------------
     | Accessors

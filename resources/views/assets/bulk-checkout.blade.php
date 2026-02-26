@@ -13,25 +13,30 @@
 
 {{-- <h3>Bulk Assign ({{ count($assets) }} selected)</h3> --}}
 
-{{-- Alerts --}}
-@if(session('success'))
-    <p style="color: green">{{ session('success') }}</p>
-@endif
+@if(session('warning') && session('removed_assets'))
+    <div class="alert alert-warning">
 
-@if(session('error'))
-    <p style="color: red">{{ session('error') }}</p>
-@endif
+        <strong>The following assets were removed (not deployable or already assigned):</strong>
 
-@if ($errors->any())
-    <div style="color:red;">
         <ul>
-            @foreach ($errors->all() as $error)
-                <li>{{ $error }}</li>
+            @foreach(session('removed_assets') as $tag)
+                <li>{{ $tag }}</li>
             @endforeach
         </ul>
+
+        @if(session('remaining_assets') && count(session('remaining_assets')))
+            <strong>Remaining assets ready for checkout:</strong>
+            <ul>
+                @foreach(session('remaining_assets') as $tag)
+                    <li>{{ $tag }}</li>
+                @endforeach
+            </ul>
+        @else
+            <strong>No valid assets remain selected. You may add new ones.</strong>
+        @endif
+
     </div>
 @endif
-
 <hr>
 
 {{-- =====================
