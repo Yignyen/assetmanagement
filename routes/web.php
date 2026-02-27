@@ -29,6 +29,21 @@ Route::get('/', function () {
 */
 Route::prefix('assets')->name('assets.')->group(function () {
 
+
+    // Logs
+    Route::get('/action-logs', [ActionLogController::class, 'index'])
+            ->name('logs');
+
+      // Trash
+    Route::get('/deleted', [AssetController::class, 'deleted'])
+        ->name('deleted');
+
+        //restore
+    Route::post('/{asset}/restore', [AssetController::class, 'restore'])
+    ->withTrashed()
+    ->name('restore');
+
+
     // BULK ROUTES FIRST (IMPORTANT)
     Route::prefix('bulk')->name('bulk.')->group(function () {
 
@@ -44,6 +59,8 @@ Route::prefix('assets')->name('assets.')->group(function () {
             ->name('checkout.form'); 
         Route::post('/checkout', [BulkAssetsController::class, 'checkoutProcess']) 
             ->name('checkout.process');
+        
+        
 
         //bulk delete route
 
@@ -52,12 +69,19 @@ Route::prefix('assets')->name('assets.')->group(function () {
 
         Route::post('/delete', [BulkAssetsController::class, 'bulkDeleteProcess'])
             ->name('delete.process');
-        });
+});
+
+
+        
+
 
     // CRUD
     Route::get('/', [AssetController::class, 'index'])->name('index');
     Route::get('/create', [AssetController::class, 'create'])->name('create');
     Route::post('/', [AssetController::class, 'store'])->name('store');
+
+
+    
 
     Route::get('/{asset}', [AssetController::class, 'show'])->name('show');
     Route::get('/{asset}/edit', [AssetController::class, 'edit'])->name('edit');
@@ -95,8 +119,7 @@ Route::resource('locations', LocationController::class);
 | Action Logs (Read-only)
 |--------------------------------------------------------------------------
 */
-Route::get('/action-logs', [ActionLogController::class, 'index'])
-    ->name('action-logs.index');
+
 
 
 Route::get('/dashboard', [DashboardController::class, 'index'])

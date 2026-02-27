@@ -442,7 +442,18 @@ th.sticky-check {
             <a href="{{ route('assets.index', ['type'=>'archived']) }}"
                class="{{ request('type')==='archived' ? 'active' : '' }}">
                 Archived <span class="count-badge">{{ $sidebarCounts['archived'] ?? 0 }}</span>
+                
 
+            </a>
+
+           <a href="{{ route('assets.logs') }}"
+                class="{{ request()->routeIs('assets.logs') ? 'active' : '' }}">
+                    Asset Action Log
+                </a>
+
+            <a href="{{ route('assets.deleted') }}"
+                class="{{ request()->routeIs('assets.deleted') ? 'active' : '' }}">
+                    Deleted Page
             </a>
 
         </div>
@@ -452,10 +463,10 @@ th.sticky-check {
             Users
         </a>
 
-        <a href="{{ route('action-logs.index') }}"
+       {{--  <a href="{{ route('action-logs.index') }}"
            class="{{ request()->routeIs('action-logs.*') ? 'active' : '' }}">
             Logs
-        </a>
+        </a> --}}
 
         <a href="{{ route('locations.index') }}"
            class="{{ request()->routeIs('locations.*') ? 'active' : '' }}">

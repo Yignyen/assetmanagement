@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ActionLog;
 use App\Support\DepartmentContext;
 
+
 class ActionLogController extends Controller
 {
     public function index()
@@ -16,6 +17,6 @@ class ActionLogController extends Controller
             ->latest('action_date')
             ->get();
 
-        return view('action_logs.index', compact('logs'));
+        return view('assets.asset_actionlog', compact('logs'));
     }
 }

@@ -10,6 +10,7 @@ use App\Support\DepartmentContext;
 use Illuminate\Http\Request;
 use App\Models\AssetModel;
 use App\Models\StatusLabel;
+use Illuminate\Http\RedirectResponse;
 use App\Services\AssetTagService;
 use Illuminate\Validation\Rule;
 
@@ -299,6 +300,47 @@ class AssetController extends Controller
     }
 
      
+/**
+ * Show deleted (soft deleted) assets
+ */
+public function deleted()
+{
+    $departmentId = DepartmentContext::id();
 
+    $assets_deleted = Asset::onlyTrashed()
+        ->with(['status', 'assigned', 'location', 'model.category'])
+        ->where('department_id', $departmentId)
+        ->latest()
+        ->paginate(15);
+
+    return view('assets.bulk-deleted-page', compact('assets_deleted'));
+}
     
+
+
+public function restore(Asset $asset): RedirectResponse
+{
+    // Include trashed models
+    $asset = Asset::withTrashed()->findOrFail($asset->id);
+
+    if ($asset->department_id !== DepartmentContext::id()) {
+        abort(403);
+    }
+
+    if (!$asset->trashed()) {
+        return redirect()
+            ->route('assets.deleted')
+            ->with('error', 'Asset is not deleted.');
+    }
+
+    $asset->restore();
+
+    return redirect()
+        ->route('assets.deleted')
+        ->with('success', 'Asset restored successfully.');
+}
+
+
+
+
 }
