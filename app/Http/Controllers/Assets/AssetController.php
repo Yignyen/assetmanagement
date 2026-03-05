@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Location;
 use App\Support\DepartmentContext;
 use Illuminate\Http\Request;
+use App\Models\Category;
 use App\Models\AssetModel;
 use App\Models\StatusLabel;
 use Illuminate\Http\RedirectResponse;
@@ -126,14 +127,14 @@ class AssetController extends Controller
      * Create asset form
      */
     public function create()
-    {
-        return view('assets.create', [
-            'models' => AssetModel::with('category')
-                ->orderBy('name')
-                ->get(),
-        ]);
-    }
-
+{
+    return view('assets.create', [
+        'categories' => Category::orderBy('name')->get(),
+        'models' => AssetModel::with('category')
+            ->orderBy('name')
+            ->get(),
+    ]);
+}
     /**
      * Store asset
      */
@@ -342,5 +343,30 @@ public function restore(Asset $asset): RedirectResponse
 
 
 
+//for mdoel by categories
+
+public function modelsByCategory(Request $request)
+{
+    $models = \App\Models\AssetModel::with('manufacturer')
+        ->where('category_id', $request->category_id)
+        ->whereNull('deleted_at')
+        ->orderBy('name')
+        ->get();
+
+    return response()->json(
+        $models->map(function ($model) {
+
+            $brand = $model->manufacturer
+                ? $model->manufacturer->name
+                : '';
+
+            return [
+                'id' => $model->id,
+                'name' => $brand . ' — ' . $model->name,
+                'manufacturer_id' => $model->manufacturer_id
+            ];
+        })
+    );
+}
 
 }

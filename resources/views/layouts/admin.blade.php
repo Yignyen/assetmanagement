@@ -374,6 +374,14 @@ th.sticky-check {
 
 
 
+/* 
+side bar divider between asset archived and action log asset */
+
+.sidebar-divider {
+    margin: 12px 0;
+    border-top: 1px solid rgba(255,255,255,0.08); /* adjust for theme */
+}
+
 
     </style>
     
@@ -417,34 +425,37 @@ th.sticky-check {
 
             <a href="{{ route('assets.index', ['type'=>'rtd']) }}"
                class="{{ request('type')==='rtd' ? 'active' : '' }}">
-                Ready To Deploy <span class="count-badge">{{ $sidebarCounts['rtd'] ?? 0 }}</span>
+                Available <span class="count-badge">{{ $sidebarCounts['rtd'] ?? 0 }}</span>
 
             </a>
 
             <a href="{{ route('assets.index', ['type'=>'deployed']) }}"
                class="{{ request('type')==='deployed' ? 'active' : '' }}">
-                Deployed <span class="count-badge">{{ $sidebarCounts['deployed'] ?? 0 }}</span>
+                Assigned <span class="count-badge">{{ $sidebarCounts['deployed'] ?? 0 }}</span>
 
             </a>
 
             <a href="{{ route('assets.index', ['type'=>'pending']) }}"
                class="{{ request('type')==='pending' ? 'active' : '' }}">
-                Pending <span class="count-badge">{{ $sidebarCounts['pending'] ?? 0 }}</span>
+                Waiting/In Process <span class="count-badge">{{ $sidebarCounts['pending'] ?? 0 }}</span>
 
             </a>
 
             <a href="{{ route('assets.index', ['type'=>'undeployable']) }}"
                class="{{ request('type')==='undeployable' ? 'active' : '' }}">
-                Undeployable <span class="count-badge">{{ $sidebarCounts['undeployable'] ?? 0 }}</span>
+                Not Available <span class="count-badge">{{ $sidebarCounts['undeployable'] ?? 0 }}</span>
 
             </a>
 
             <a href="{{ route('assets.index', ['type'=>'archived']) }}"
                class="{{ request('type')==='archived' ? 'active' : '' }}">
-                Archived <span class="count-badge">{{ $sidebarCounts['archived'] ?? 0 }}</span>
+                Retired Assets <span class="count-badge">{{ $sidebarCounts['archived'] ?? 0 }}</span>
                 
 
             </a>
+
+
+<div class="sidebar-divider"></div>
 
            <a href="{{ route('assets.logs') }}"
                 class="{{ request()->routeIs('assets.logs') ? 'active' : '' }}">
@@ -455,6 +466,17 @@ th.sticky-check {
                 class="{{ request()->routeIs('assets.deleted') ? 'active' : '' }}">
                     Deleted Page
             </a>
+           {{--  bulk checkout  page 
+ --}}
+           <a href="{{ route('assets.bulk.checkout.form') }}"
+   class="{{ request()->routeIs('assets.bulk.checkout.*') ? 'active' : '' }}">
+    Bulk Checkout
+</a>
+
+<a href="{{ route('assets.bulk.restore.form') }}"
+   class="{{ request()->routeIs('assets.bulk.restore.*') ? 'active' : '' }}">
+    Bulk Restore
+</a>
 
         </div>
 

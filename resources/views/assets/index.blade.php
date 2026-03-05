@@ -154,7 +154,8 @@
                         <td>{{ $asset->label }}</td>
                         <td>{{ $asset->asset_tag }}</td>
                         <td>{{ $asset->serial_no ?? '—' }}</td>
-                        <td>{{ $asset->model?->name ?? '—' }}</td>
+                        <td>{{ ($asset->model?->manufacturer?->name ?? '—') . ' ' . ($asset->model?->name ?? '') }}</td>
+
                         <td>{{ $asset->model?->category?->name ?? '—' }}</td>
 
                         {{-- ================================
@@ -184,9 +185,9 @@
                                     @if($isAssigned)
                                         <span class="status-dot dot-blue"></span>
                                         <span class="text-blue">
-                                            {{ $status->name }}
-                                        </span>
-                                        <span class="status-tag">Deployed</span>
+                                            Assigned
+                                        </span>{{-- 
+                                        <span class="status-tag">Assigned</span> --}}
                                     @else
                                         <span class="status-dot dot-green"></span>
                                         <span class="text-green">

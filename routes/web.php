@@ -38,10 +38,9 @@ Route::prefix('assets')->name('assets.')->group(function () {
     Route::get('/deleted', [AssetController::class, 'deleted'])
         ->name('deleted');
 
-        //restore
-    Route::post('/{asset}/restore', [AssetController::class, 'restore'])
-    ->withTrashed()
-    ->name('restore');
+       
+   
+
 
 
     // BULK ROUTES FIRST (IMPORTANT)
@@ -69,7 +68,22 @@ Route::prefix('assets')->name('assets.')->group(function () {
 
         Route::post('/delete', [BulkAssetsController::class, 'bulkDeleteProcess'])
             ->name('delete.process');
+
+
+        // Show bulk restore page
+        Route::get('/restore', [BulkAssetsController::class, 'restoreForm'])
+            ->name('restore.form');
+
+        // Process bulk restore
+        Route::post('/restore', [BulkAssetsController::class, 'restoreProcess'])
+            ->name('restore.process');
 });
+
+ //restore
+    Route::post('/{asset}/restore', [AssetController::class, 'restore'])
+    ->withTrashed()
+    ->name('restore');
+
 
 
         
@@ -132,7 +146,12 @@ Route::get('/ajax/assets', [BulkAssetsController::class, 'ajaxAssets'])
     ->name('ajax.assets');
 
 
+//for deleted assets list for select2 
+Route::get('/ajax/deleted-assets', [BulkAssetsController::class, 'ajaxDeletedAssets'])
+    ->name('ajax.deleted.assets');
 
 
+//for model by category in creating new assets
 
-
+    Route::get('/ajax/models-by-category', [AssetController::class, 'modelsByCategory'])
+    ->name('ajax.models.by.category');

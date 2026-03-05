@@ -11,7 +11,7 @@
    This wraps the bulk dropdown + table
 ============================================== --}}
 {{-- <div style="display: flex; justify-content:flex-start; margin-bottom:15px"> --}}
-<form method="POST" action="{{ route('assets.bulk.handle') }}" id="bulk-form">
+{{-- <form method="POST" action="{{ route('assets.bulk.handle') }}" id="bulk-form">
     @csrf
 
     {{-- ================================
@@ -19,22 +19,24 @@
     ================================= --}}
     
 
-        {{-- Dropdown for selecting bulk action --}}
+        {{-- Dropdown for selecting bulk action 
         <div style="display:flex; justify-content:flex-start; gap:8px; margin-bottom:15px;">
         <select name="bulk_action" style="padding:8px; width:240px;">
            
             <option value="edit">Bulk Edit</option>
             <option value="checkout">Bulk Checkout</option>
             <option value="delete">Bulk Delete</option>
+            <option value="restore">Bulk restore</option>
             
         </select>
 
-        {{-- Submit bulk action --}}
+        {{-- Submit bulk action 
         <button type="submit" class="btn btn-primary btn-sm">
             Go
         </button>
    
 </div>
+</form> --}}
 
 {{-- ================================
    SEARCH FORM (GET)
@@ -81,6 +83,7 @@
                     <th>Serial No</th>
                     <th>Model</th>
                     <th>Category</th>
+                    <th>deleted at</th>
                     <th>Status</th>
                 
                     <th class="sticky-action">Actions</th>
@@ -104,6 +107,7 @@
                     <td> {{ $asset->serial_no ?? '---' }}  </td>
                     <td> {{ $asset->model?->name ?? '---' }}  </td>
                     <td> {{ $asset->model?->category?->name ?? '---' }}  </td>
+                    <td> {{ $asset->deleted_at }} </td>
                    
                     <td> {{ $asset->status?->name ?? '---' }}  </td>
                     
@@ -138,7 +142,7 @@
 
 {{-- =============================================
    JAVASCRIPT
-   Handles select all + validation
+   Handles select all + validation</form>
 ============================================== --}}
 <script>
 

@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\AssetModel;
 use App\Models\User;
 use App\Models\Location;
-
+use Illuminate\Support\Facades\Redirect;
 
 class BulkAssetsController extends Controller
 {
@@ -42,6 +42,7 @@ class BulkAssetsController extends Controller
             'delete' => $this->bulkDeleteRedirect($assets, $request),
             'checkout' => $this->bulkCheckoutRedirect($assets,$request),
             'edit'     => $this->bulkEditRedirect($assets),
+           /*  'restore' => $this->bulkRestoreRedirect($assets, $request), */
             default    => back()->with('error', 'Invalid bulk action.'),
         };
     }
@@ -87,6 +88,14 @@ protected function bulkDeleteRedirect($assets, Request $request)
 
     return redirect()->route('assets.bulk.delete.confirm');
 }
+
+
+
+
+
+
+
+
 
 
 //bulk delete confirmation
@@ -512,6 +521,48 @@ public function checkoutProcess(Request $request)
 
 
 
+/*
+    |--------------------------------------------------------------------------
+    | bulk Restore
+    |--------------------------------------------------------------------------
+    */
+
+    /* bulk restore rediect */
+
+
+/* form for bulk  */
+
+
+
+   public function restoreForm()
+{
+    $departmentId = DepartmentContext::id();
+
+    $assets = Asset::onlyTrashed()
+        ->where('department_id', $departmentId)
+        ->latest()
+        ->get();
+
+    return view('assets.bulk-restore', compact('assets'));
+}
+
+
+public function restoreProcess(Request $request)
+{
+    $request->validate([
+    'selected_assets' => 'required|array|min:1',
+]);
+
+    Asset::onlyTrashed()
+        ->whereIn('id', $request->selected_assets)
+        ->where('department_id', DepartmentContext::id())
+        ->restore();
+
+    return redirect()
+        ->route('assets.deleted')
+        ->with('success', 'Selected assets restored successfully.');
+}
+
 public function ajaxAssets(Request $request)
 {
     $departmentId = DepartmentContext::id();
@@ -534,6 +585,34 @@ public function ajaxAssets(Request $request)
             return [
                 'id'   => $asset->id,
                 'text' => $asset->asset_tag . ' - ' . ($asset->model?->name ?? ''),
+            ];
+        })
+    ]);
+}
+
+//select2 with trashed only for bulknrestore
+
+
+public function ajaxDeletedAssets(Request $request)
+{
+    $departmentId = DepartmentContext::id();
+
+    $query = Asset::onlyTrashed() // 👈 IMPORTANT
+        ->where('department_id', $departmentId);
+
+    if ($request->filled('q')) {
+        $query->where(function ($q) use ($request) {
+            $q->where('asset_tag', 'like', "%{$request->q}%")
+              ->orWhere('serial_no', 'like', "%{$request->q}%")
+              ->orWhere('name', 'like', "%{$request->q}%");
+        });
+    }
+
+    return response()->json([
+        'results' => $query->limit(20)->get()->map(function ($asset) {
+            return [
+                'id' => $asset->id,
+                'text' => $asset->asset_tag . ' - ' . ($asset->name ?? ''),
             ];
         })
     ]);

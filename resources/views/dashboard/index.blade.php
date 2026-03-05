@@ -5,6 +5,25 @@
 
 @section('content')
 
+<form method="GET" style="margin-bottom:20px">
+
+    <label>Select Category</label>
+
+    <select name="category" onchange="this.form.submit()">
+
+        <option value="">All Categories</option>
+
+        @foreach($categories as $category)
+            <option value="{{ $category->id }}"
+                {{ $selectedCategory == $category->id ? 'selected' : '' }}>
+                {{ $category->name }}
+            </option>
+        @endforeach
+
+    </select>
+
+</form>
+
 {{-- STATS --}}
 <div class="stats-row">
     <div class="stat-box bg-assets">

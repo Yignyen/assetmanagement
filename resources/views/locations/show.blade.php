@@ -51,7 +51,7 @@
                 {{-- Status --}}
                 <td>
                     <span class="badge bg-primary">
-                        {{ ucfirst($asset->status) }}
+                        {{ ucfirst($asset->status->name) }}
                     </span>
                 </td>
 

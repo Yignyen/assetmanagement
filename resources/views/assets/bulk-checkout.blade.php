@@ -26,11 +26,11 @@
 
         @if(session('remaining_assets') && count(session('remaining_assets')))
             <strong>Remaining assets ready for checkout:</strong>
-            <ul>
+            {{-- <ul>
                 @foreach(session('remaining_assets') as $tag)
                     <li>{{ $tag }}</li>
                 @endforeach
-            </ul>
+            </ul> --}}
         @else
             <strong>No valid assets remain selected. You may add new ones.</strong>
         @endif
