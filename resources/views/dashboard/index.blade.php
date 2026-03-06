@@ -40,6 +40,12 @@
         <h3>{{ $availableCount }}</h3>
         <p>Available Assets</p>
     </div>
+
+     <div class="stat-box bg-available">
+        <h3>{{ $notAvailableCount }}</h3>
+        <p>Not Available & waiting  Assets  & archived</p>
+    </div>
+
     <div class="stat-box bg-users">
         <h3>{{ $usersCount }}</h3>
         <p>Total Users</p>

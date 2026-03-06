@@ -126,13 +126,16 @@ class AssetController extends Controller
     /**
      * Create asset form
      */
-    public function create()
+  public function create()
 {
     return view('assets.create', [
         'categories' => Category::orderBy('name')->get(),
+
         'models' => AssetModel::with('category')
             ->orderBy('name')
             ->get(),
+
+        'manufacturers' => \App\Models\Manufacturer::orderBy('name')->get(),
     ]);
 }
     /**

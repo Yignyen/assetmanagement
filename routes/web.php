@@ -155,3 +155,33 @@ Route::get('/ajax/deleted-assets', [BulkAssetsController::class, 'ajaxDeletedAss
 
     Route::get('/ajax/models-by-category', [AssetController::class, 'modelsByCategory'])
     ->name('ajax.models.by.category');
+
+
+//for dropdown, create new categories for add asseets
+ /*    Route::post('/categories/ajax-store',[CategoryController::class,'ajaxStore'])
+->name('categories.ajaxStore'); */
+
+
+use App\Http\Controllers\CategoryController;
+
+Route::get('/categories/create', [CategoryController::class,'create'])
+        ->name('categories.create');
+
+Route::post('/categories/store', [CategoryController::class,'store'])
+        ->name('categories.store');
+
+
+
+
+//for moddel amd modal
+      use App\Http\Controllers\ModelController;
+
+Route::post('/ajax/models/create', [ModelController::class,'storeAjax'])
+      ->name('models.ajax.store');
+
+
+
+
+      // route for asset model create and store 
+      Route::get('/models/create', [ModelController::class,'create'])->name('models.create');
+Route::post('/models', [ModelController::class,'store'])->name('models.store');

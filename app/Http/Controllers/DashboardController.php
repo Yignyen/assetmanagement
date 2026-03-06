@@ -44,9 +44,15 @@ if ($categoryId) {
                 ->whereNotNull('assigned_to')
                 ->count(),
 
+            'notAvailableCount' => (clone $assetsQuery)
+                ->whereHas('status', fn($q) =>
+                $q->undeployable()->orWhere(fn($q) => $q->pending())->orwhere(fn($q)=> $q->archived())
+                            )
+                ->count(),
+
             'availableCount' => (clone $assetsQuery)
                 ->whereNull('assigned_to')
-                ->whereHas('status', fn($q) => $q->deployable())
+                ->whereHas('status', fn($q) => $q->deployable() )
                 ->count(),
 
             'assignedToUsers' => (clone $assetsQuery)
