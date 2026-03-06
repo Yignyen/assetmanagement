@@ -175,6 +175,7 @@ Route::post('/categories/store', [CategoryController::class,'store'])
 
 //for moddel amd modal
       use App\Http\Controllers\ModelController;
+use App\Models\Manufacturer;
 
 Route::post('/ajax/models/create', [ModelController::class,'storeAjax'])
       ->name('models.ajax.store');
@@ -185,3 +186,14 @@ Route::post('/ajax/models/create', [ModelController::class,'storeAjax'])
       // route for asset model create and store 
       Route::get('/models/create', [ModelController::class,'create'])->name('models.create');
 Route::post('/models', [ModelController::class,'store'])->name('models.store');
+
+
+
+//route for manufacturer
+use App\Http\Controllers\ManufacturerController;
+
+Route::get('/manufacturers/create', [ManufacturerController::class, 'create'])
+    ->name('manufacturers.create');
+
+Route::post('/manufacturers', [ManufacturerController::class, 'store'])
+    ->name('manufacturers.store');

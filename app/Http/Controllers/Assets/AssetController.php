@@ -29,12 +29,21 @@ class AssetController extends Controller
 
     $query = clone $baseQuery;
 
+// CATEGORY FILTER
+if ($request->filled('category')) {
+    $query->whereHas('model.category', fn($q) =>
+        $q->where('id', $request->category)
+    );
+}
+
     // ===============================
     // LIFECYCLE FILTER
     // ===============================
-    if ($request->filled('type')) {
+   $status = $request->type ?? $request->status;
 
-        match ($request->type) {
+if ($status) {
+
+        match ($status) {
 
             'rtd' => $query
                 ->whereNull('assigned_to')

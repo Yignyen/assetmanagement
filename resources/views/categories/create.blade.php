@@ -15,7 +15,7 @@
 
 <div class="mb-3">
 
-<label>Category Name</label>
+<label>Category Name</label><br>
 
 <input type="text"
        name="name"
@@ -24,10 +24,13 @@
 
 </div>
 
+<br>
+
 
 <div class="mb-3">
 
 <label>Type</label>
+<br>
 
 <select name="type" class="form-control">
 
@@ -39,15 +42,20 @@
 
 </div>
 
+<br>
+
 
 <div class="mb-3">
 
 <label>Description</label>
+<br>
 
 <textarea name="description"
           class="form-control"></textarea>
 
 </div>
+
+<br>
 
 <button type="submit"
         class="btn btn-primary">

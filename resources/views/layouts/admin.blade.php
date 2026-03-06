@@ -372,6 +372,16 @@ th.sticky-check {
     border-radius: 12px;
 }
 
+/* for no underline for clickable */
+.stats-row a {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.stats-row a:hover .stat-box {
+    transform: translateY(-4px);
+}
 
 
 /* 

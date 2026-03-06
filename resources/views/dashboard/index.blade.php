@@ -26,20 +26,32 @@
 
 {{-- STATS --}}
 <div class="stats-row">
-    <div class="stat-box bg-assets">
-        <h3>{{ $assetsCount }}</h3>
-        <p>Total Assets</p>
-    </div>
+   <a href="{{ route('assets.index', ['category'=>$selectedCategory]) }}">
+<div class="stat-box bg-assets">
+    <h3>{{ $assetsCount }}</h3>
+    <p>Total Assets</p>
+</div>
+</a>
 
-    <div class="stat-box bg-assigned">
-        <h3>{{ $assignedCount }}</h3>
-        <p>Assigned Assets</p>
-    </div>
+<a href="{{ route('assets.index', [
+    'category'=>$selectedCategory,
+    'status'=>'deployed'
+]) }}">
+<div class="stat-box bg-assigned">
+    <h3>{{ $assignedCount }}</h3>
+    <p>Assigned Assets</p>
+</div>
+</a>
 
-    <div class="stat-box bg-available">
-        <h3>{{ $availableCount }}</h3>
-        <p>Available Assets</p>
-    </div>
+<a href="{{ route('assets.index', [
+    'category'=>$selectedCategory,
+    'status'=>'rtd'
+]) }}">
+<div class="stat-box bg-available">
+    <h3>{{ $availableCount }}</h3>
+    <p>Available Assets</p>
+</div>
+</a>
 
      <div class="stat-box bg-available">
         <h3>{{ $notAvailableCount }}</h3>

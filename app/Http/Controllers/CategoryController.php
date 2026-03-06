@@ -29,7 +29,10 @@ class CategoryController extends Controller
             'description' => $request->description
         ]);
 
-        return redirect()->back()->with('success','Category created successfully');
+       /*  return redirect()->back()->with('success','Category created successfully'); */
+        return redirect()
+            ->route('assets.create')
+            ->with('success','Model created successfully');
+    }
     }
 
-}

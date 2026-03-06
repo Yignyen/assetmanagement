@@ -37,11 +37,12 @@
 </div>
 
 
-
 {{-- MANUFACTURER --}}
 <div style="margin-bottom:15px">
 
-<label><strong>Manufacturer</strong></label><br>
+<label><strong>Manufacturer</strong></label>
+
+<div style="display:flex; gap:8px; margin-top:5px">
 
 <select name="manufacturer_id" style="width:300px">
 
@@ -57,8 +58,16 @@
 
 </select>
 
+<a href="{{ route('manufacturers.create') }}"
+   class="btn btn-sm btn-secondary">
+
++ New Manufacturer
+
+</a>
+
 </div>
 
+</div>
 
 
 {{-- MODEL NAME --}}
